@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adm.local/schema/browser-protocol/v1/download-takeover-request.schema.json",
+  "title": "ADM Browser Protocol v1 DownloadTakeoverRequest",
+  "allOf": [
+    { "$ref": "envelope.schema.json" },
+    {
+      "properties": {
+        "type": { "const": "DownloadTakeoverRequest" },
+        "payload": {
+          "type": "object",
+          "required": ["browserDownloadId", "browserDownloadIdentity", "url", "finalUrl", "filename", "referrer", "mime", "totalSize", "incognito", "pageSessionId"],
+          "properties": {
+            "browserDownloadId": { "type": "integer", "minimum": 0 },
+            "browserDownloadIdentity": { "type": "string", "minLength": 1 },
+            "url": { "type": "string", "format": "uri" },
+            "finalUrl": { "type": ["string", "null"] },
+            "filename": { "type": ["string", "null"] },
+            "referrer": { "type": ["string", "null"] },
+            "mime": { "type": ["string", "null"] },
+            "totalSize": { "type": ["integer", "null"] },
+            "incognito": { "type": "boolean" },
+            "pageSessionId": { "type": ["string", "null"] }
+          },
+          "additionalProperties": true
+        }
+      }
+    }
+  ]
+}

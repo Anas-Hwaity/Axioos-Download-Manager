@@ -1,0 +1,62 @@
+#!/bin/bash
+
+
+VERSION=8.0.25
+SRC_DIR=binary-source
+
+rm -rf "adman_gtk_${VERSION}_amd64"
+rm -f "adman_gtk_${VERSION}_amd64.deb"
+
+mkdir -p "adman_gtk_${VERSION}_amd64/DEBIAN"
+mkdir -p "adman_gtk_${VERSION}_amd64/opt/adman"
+mkdir -p "adman_gtk_${VERSION}_amd64/usr/bin"
+mkdir -p "adman_gtk_${VERSION}_amd64/usr/share/applications"
+
+cp -r "${SRC_DIR}/." "adman_gtk_${VERSION}_amd64/opt/adman"
+
+touch "adman_gtk_${VERSION}_amd64/DEBIAN/control"
+touch "adman_gtk_${VERSION}_amd64/opt/adman/adm-app.desktop"
+touch "adman_gtk_${VERSION}_amd64/usr/bin/adman"
+
+cat <<EOF > "adman_gtk_${VERSION}_amd64/DEBIAN/control"
+Package: adman
+Version: ${VERSION}
+Architecture: amd64
+Depends: libgtk-3-0 (>= 3.22.11)
+Recommends: ffmpeg
+Maintainer: Anas Al Hwaity
+Description: Open source download accelerator and video downloader.
+ Open source download accelerator and video downloader.
+EOF
+
+cat <<EOF > "adman_gtk_${VERSION}_amd64/opt/adman/adm-app.desktop"
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Exec=env GTK_USE_PORTAL=1 /opt/adman/adm-app %U
+Type=Application
+Terminal=false
+Name=Axioos Download Manager
+Comment=Axioos Download Manager
+Categories=Network;
+Icon=/opt/adman/adm-logo.svg
+MimeType=application/adm-app;x-scheme-handler/adm-app;
+StartupNotify=true
+EOF
+
+cat <<EOF > "adman_gtk_${VERSION}_amd64/usr/bin/adman"
+#!/bin/bash
+export GTK_USE_PORTAL=1
+/opt/adman/adm-app \$@
+EOF
+
+cat <<EOF > "adman_gtk_${VERSION}_amd64/opt/adman/source_pkg.txt"
+adman_gtk|.deb
+EOF
+
+cp "adman_gtk_${VERSION}_amd64/opt/adman/adm-app.desktop" "adman_gtk_${VERSION}_amd64/usr/share/applications"
+
+chmod 755 "adman_gtk_${VERSION}_amd64/usr/bin/adman"
+chmod 755 "adman_gtk_${VERSION}_amd64/opt/adman/adm-app"
+
+dpkg-deb --build --root-owner-group -Z xz "adman_gtk_${VERSION}_amd64"

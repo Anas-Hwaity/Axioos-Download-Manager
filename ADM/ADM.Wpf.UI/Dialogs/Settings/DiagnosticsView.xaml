@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="ADM.Wpf.UI.Dialogs.Settings.DiagnosticsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="Transparent" Margin="4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="Diagnostics" FontSize="18" FontWeight="SemiBold"/>
+            <TextBlock Margin="0,4,0,10" Opacity="0.72" TextWrapping="Wrap"
+                       Text="This view contains local diagnostic facts only. Secrets, cookies, passwords and full signed URLs are intentionally excluded."/>
+        </StackPanel>
+        <Border Grid.Row="1" Background="{DynamicResource GlassTableSurfaceBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="12">
+            <TextBox x:Name="SummaryText" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                     VerticalScrollBarVisibility="Auto" Style="{StaticResource GlassTextBox}"
+                     BorderThickness="1" Background="{DynamicResource GlassInputBrush}"
+                     BorderBrush="{DynamicResource GlassBorderBrush}"
+                     Foreground="{DynamicResource GlassTextBrush}" FontFamily="Consolas"/>
+        </Border>
+        <Button Grid.Row="2" Margin="0,10,0,0" HorizontalAlignment="Left" Padding="14,5"
+                Style="{StaticResource GlassToolbarActionButton}" Content="Export sanitized diagnostics ZIP" Click="Export_Click"/>
+    </Grid>
+</UserControl>

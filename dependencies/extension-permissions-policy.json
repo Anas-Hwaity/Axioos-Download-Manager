@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "manifestVersion": 3,
+  "permissions": [
+    "alarms",
+    "contextMenus",
+    "cookies",
+    "downloads",
+    "nativeMessaging",
+    "storage",
+    "tabs",
+    "webNavigation",
+    "webRequest"
+  ],
+  "hostPermissions": [
+    "*://*/*"
+  ],
+  "contentScriptMatches": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "rationale": {
+    "cookies": "Used only for explicit authenticated social-analysis retry after AuthenticationRequired; first-pass analysis remains cookie-free.",
+    "downloads": "Required for browser download takeover and recovery.",
+    "nativeMessaging": "Required for the browser-to-desktop protocol bridge.",
+    "webRequest": "Required for native browser media detection and takeover observation.",
+    "tabs/webNavigation": "Required for page-session identity and SPA navigation lifecycle.",
+    "storage/alarms/contextMenus": "Required for suppression/session state, service-worker recovery, and user actions."
+  }
+}

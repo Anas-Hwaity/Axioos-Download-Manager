@@ -1,0 +1,592 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="clr-namespace:System;assembly=mscorlib" xmlns:pOptions="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options" xmlns:glass="clr-namespace:ADM.Wpf.UI">
+    <LinearGradientBrush x:Key="GlassBackdropBaseBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF03070C" Offset="0"/>
+        <GradientStop Color="#FF07121C" Offset="0.46"/>
+        <GradientStop Color="#FF090F1B" Offset="0.74"/>
+        <GradientStop Color="#FF04070C" Offset="1"/>
+    </LinearGradientBrush>
+    <Color x:Key="GlassFieldBlueColor">#FF2A55C0</Color>
+    <Color x:Key="GlassFieldCyanColor">#FF3A96CF</Color>
+    <Color x:Key="GlassFieldVioletColor">#FF7652C8</Color>
+    <Color x:Key="GlassFieldGlintColor">#FF9CD7F3</Color>
+    <Color x:Key="GlassFieldSeamColor">#FF050A14</Color>
+    <LinearGradientBrush x:Key="GlassBackdropBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF071426" Offset="0"/>
+        <GradientStop Color="#FF071A34" Offset="0.50"/>
+        <GradientStop Color="#FF11122D" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassSurfaceBrush" pOptions:Freeze="False" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#A51A365F" Offset="0"/>
+        <GradientStop Color="#8E10294D" Offset="0.52"/>
+        <GradientStop Color="#820F1938" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassSurfaceStrongBrush" pOptions:Freeze="False" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#BD244B83" Offset="0"/>
+        <GradientStop Color="#A914274D" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassSurfaceHoverBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#B2244D82" Offset="0"/>
+        <GradientStop Color="#9A15254C" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassInputBrush" pOptions:Freeze="False" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#B31B365F" Offset="0"/>
+        <GradientStop Color="#9E0B172E" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassPanelSurfaceBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#B31A3765" Offset="0"/>
+        <GradientStop Color="#A10D2142" Offset="0.45"/>
+        <GradientStop Color="#AC18163B" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassPanelSurfaceStrongBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#C3244D86" Offset="0"/>
+        <GradientStop Color="#B3132850" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassTableSurfaceBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#B60D2343" Offset="0"/>
+        <GradientStop Color="#A60A1732" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassPanelEdgeBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#CC5CE8FF" Offset="0"/>
+        <GradientStop Color="#7F4A83FF" Offset="0.58"/>
+        <GradientStop Color="#00A66CFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassAccentBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#FF43E6FF" Offset="0"/>
+        <GradientStop Color="#FF527CFF" Offset="0.65"/>
+        <GradientStop Color="#FF9F6BFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassAccentSoftBrush" pOptions:Freeze="False" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#C93DDDF4" Offset="0"/>
+        <GradientStop Color="#A14B79FA" Offset="0.58"/>
+        <GradientStop Color="#A07957EF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassDownloadsBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#E331A9F4" Offset="0"/>
+        <GradientStop Color="#E34D7CFA" Offset="0.58"/>
+        <GradientStop Color="#DF8954F1" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassSpecularBrush" pOptions:Freeze="False" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#66FFFFFF" Offset="0"/>
+        <GradientStop Color="#1E8CF5FF" Offset="0.16"/>
+        <GradientStop Color="#00192D34" Offset="0.56"/>
+    </LinearGradientBrush>
+    <RadialGradientBrush x:Key="GlassAuroraCyanBrush" pOptions:Freeze="False" Center="0.38,0.42" GradientOrigin="0.38,0.42" RadiusX="0.62" RadiusY="0.62">
+        <GradientStop Color="#C944E9F6" Offset="0"/>
+        <GradientStop Color="#602A78B4" Offset="0.48"/>
+        <GradientStop Color="#002A78B4" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="GlassAuroraPurpleBrush" pOptions:Freeze="False" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.62" RadiusY="0.62">
+        <GradientStop Color="#A8757BFF" Offset="0"/>
+        <GradientStop Color="#4A4A56B8" Offset="0.52"/>
+        <GradientStop Color="#004A56B8" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="GlassAuroraBlueBrush" pOptions:Freeze="False" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.62" RadiusY="0.62">
+        <GradientStop Color="#9B5578FF" Offset="0"/>
+        <GradientStop Color="#4A283E88" Offset="0.55"/>
+        <GradientStop Color="#00283E88" Offset="1"/>
+    </RadialGradientBrush>
+    <SolidColorBrush x:Key="GlassBorderBrush" pOptions:Freeze="False" Color="#FFFFFFFF" Opacity="0.20"/>
+    <SolidColorBrush x:Key="GlassBorderStrongBrush" pOptions:Freeze="False" Color="#FF7BE2FF" Opacity="0.62"/>
+    <SolidColorBrush x:Key="GlassTextBrush" Color="#FFF5F9FF"/>
+    <SolidColorBrush x:Key="GlassMutedTextBrush" Color="#FF9EADC1"/>
+    <SolidColorBrush x:Key="GlassDisabledInputBrush" Color="#FF0B171C" Opacity="0.88"/>
+    <SolidColorBrush x:Key="GlassDisabledTextBrush" Color="#FF91A9AF"/>
+    <SolidColorBrush x:Key="GlassDangerBrush" Color="#FFFF7485"/>
+    <SolidColorBrush x:Key="GlassSuccessBrush" Color="#FF67E6A5"/>
+    <SolidColorBrush x:Key="SortIndicatorBrush" Color="#FF808080"/>
+    <SolidColorBrush x:Key="AboutLogoBackgroundBrush" Color="#FF2471A3"/>
+    <SolidColorBrush x:Key="AboutLogoAccentBrush" Color="#FF3498DB"/>
+    <SolidColorBrush x:Key="AboutLogoMarkBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="AboutWebsiteBrush" Color="#FF00BFFF"/>
+    <LinearGradientBrush x:Key="AxioosLogoTileBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFC6FF3D" Offset="0"/>
+        <GradientStop Color="#FF3DFFC6" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="AxioosLogoInkBrush" Color="#FF0A0F02"/>
+    <Geometry x:Key="AxioosLogoGeometry">F0 M32,9 L53,55 L42.5,55 L38.8,46.5 L25.2,46.5 L21.5,55 L11,55 Z M25.5,28 L38.5,28 L32,39 Z</Geometry>
+    <SolidColorBrush x:Key="BrowserWikiLinkBrush" Color="#FF1E90FF"/>
+    <SolidColorBrush x:Key="ChromeIntegrationSuccessBrush" Color="#FF1E90FF"/>
+    <SolidColorBrush x:Key="ChromeIntegrationFailureBrush" Color="#FFBC8F8F"/>
+    <SolidColorBrush x:Key="FloatingWidgetBackgroundBrush" Color="#FF000000"/>
+    <SolidColorBrush x:Key="FloatingWidgetActionBrush" Color="#FF1E90FF"/>
+    <SolidColorBrush x:Key="FloatingWidgetTextBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="color-ri-movie-fill" Color="#FF007AFF"/>
+    <SolidColorBrush x:Key="color-ri-file-zip-fill" Color="#FFFF9500"/>
+    <SolidColorBrush x:Key="color-ri-microsoft-fill" Color="#FFFF3A31"/>
+    <SolidColorBrush x:Key="color-ri-file-fill" Color="#FF6AC4DC"/>
+    <SolidColorBrush x:Key="color-ri-file-text-fill" Color="#FF00C7BE"/>
+    <SolidColorBrush x:Key="color-update-avaliable" Color="#FFFF3A31"/>
+    <DropShadowEffect x:Key="GlassCardShadow" pOptions:Freeze="False" BlurRadius="46" ShadowDepth="12" Opacity="0.48" Color="#FF000000"/>
+    <DropShadowEffect x:Key="GlassMenuShadow" pOptions:Freeze="False" BlurRadius="42" ShadowDepth="12" Opacity="0.56" Color="#FF000000"/>
+
+    <SolidColorBrush x:Key="CategoryForegroundNormal" Color="#FFA8BEC6"/>
+    <SolidColorBrush x:Key="CategoryForegroundSelected" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="CategoryHighlight" pOptions:Freeze="False" Color="#FF3977F6" Opacity="0.68"/>
+    <SolidColorBrush x:Key="CategoryListBackground" pOptions:Freeze="False" Color="#FF071324" Opacity="0.70"/>
+    <SolidColorBrush x:Key="CategoryMouseOverBackground" pOptions:Freeze="False" Color="#FF152D59" Opacity="0.66"/>
+    <SolidColorBrush x:Key="ButtonBackcolor" pOptions:Freeze="False" Color="#FF10203A" Opacity="0.74"/>
+    <SolidColorBrush x:Key="ButtonForecolor" Color="#FFF6F9FE"/>
+    <SolidColorBrush x:Key="ButtonMouseOverBackcolor" pOptions:Freeze="False" Color="#FF1D3D70" Opacity="0.86"/>
+    <SolidColorBrush x:Key="ButtonMousePressedBackcolor" pOptions:Freeze="False" Color="#FF172850" Opacity="0.94"/>
+    <SolidColorBrush x:Key="ButtonDisabledBackcolor" Color="#FF0A151B" Opacity="0.48"/>
+    <SolidColorBrush x:Key="ButtonBorder" Color="#FFFFFFFF" Opacity="0.19"/>
+    <SolidColorBrush x:Key="ButtonFocusedBorder" Color="#FF58D8FF"/>
+    <SolidColorBrush x:Key="ButtonOverBackcolor" Color="#FF1A4650" Opacity="0.82"/>
+    <SolidColorBrush x:Key="ToolButtonForecolor" Color="#FFE1EAF6"/>
+    <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" pOptions:Freeze="False" Color="#FF1D5864" Opacity="0.58"/>
+    <SolidColorBrush x:Key="ToolButtonMousePressedBackcolor" pOptions:Freeze="False" Color="#FF12333E" Opacity="0.72"/>
+    <SolidColorBrush x:Key="ToolButtonMouseDisabledForecolor" Color="#FF617D86"/>
+    <SolidColorBrush x:Key="ToolbarBordercolor" Color="#FFFFFFFF" Opacity="0.14"/>
+    <SolidColorBrush x:Key="SearchBorder" Color="#FFFFFFFF" Opacity="0.19"/>
+    <SolidColorBrush x:Key="SearchBackcolor" pOptions:Freeze="False" Color="#FF0B1D23" Opacity="0.68"/>
+    <SolidColorBrush x:Key="ControlBackcolor" pOptions:Freeze="False" Color="#FF09191F" Opacity="0.68"/>
+    <SolidColorBrush x:Key="ControlBordercolor" Color="#FFFFFFFF" Opacity="0.15"/>
+    <SolidColorBrush x:Key="ControlForecolor" Color="#FFE6F4F5"/>
+    <SolidColorBrush x:Key="TextBackcolor" pOptions:Freeze="False" Color="#FF0C2027" Opacity="0.72"/>
+    <SolidColorBrush x:Key="TextForecolor" Color="#FFF5F8FD"/>
+    <SolidColorBrush x:Key="DisabledTextBackcolor" Color="#FF091317" Opacity="0.52"/>
+    <SolidColorBrush x:Key="TextMouseOverBorder" Color="#FF68D9FF" Opacity="0.75"/>
+    <SolidColorBrush x:Key="TextBorder" Color="#FFFFFFFF" Opacity="0.18"/>
+    <SolidColorBrush x:Key="TextFocusedBorder" Color="#FF59D8FF"/>
+    <SolidColorBrush x:Key="ListViewBackcolor" pOptions:Freeze="False" Color="#FF08171B" Opacity="0.61"/>
+    <SolidColorBrush x:Key="ListViewForecolor" Color="#FFEAF1FA"/>
+    <SolidColorBrush x:Key="ListViewMouseOverBackcolor" pOptions:Freeze="False" Color="#FF17434D" Opacity="0.55"/>
+    <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="ListViewSelectedForecolor" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="ListViewSelectedBackcolor" pOptions:Freeze="False" Color="#FF2B61D7" Opacity="0.72"/>
+    <SolidColorBrush x:Key="ListViewIconForecolor" Color="#FF82A6AE"/>
+    <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#FFA4C2C7"/>
+    <SolidColorBrush x:Key="StatusbarBackcolor" pOptions:Freeze="False" Color="#FF09191E" Opacity="0.68"/>
+    <SolidColorBrush x:Key="StatusbarIconcolor" Color="#FF83A8AF"/>
+    <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#FF7898A0"/>
+    <SolidColorBrush x:Key="NewDownloadTextBoxBackground" pOptions:Freeze="False" Color="#FF0C2027" Opacity="0.72"/>
+    <SolidColorBrush x:Key="HyperlinkForecolor" Color="#FF6EDCFF"/>
+    <SolidColorBrush x:Key="ScrollBarThumbColorNormal" Color="#FF4D7C84" Opacity="0.52"/>
+    <SolidColorBrush x:Key="ScrollBarThumbColorHot" Color="#FF6DBBC5" Opacity="0.78"/>
+    <SolidColorBrush x:Key="ControlDisabledBackcolor" Color="#FF081216" Opacity="0.50"/>
+    <SolidColorBrush x:Key="TabSelectionColor" Color="#FF4EE9FF"/>
+    <SolidColorBrush x:Key="ProgressBarBackcolor" pOptions:Freeze="False" Color="#FF13313A" Opacity="0.50"/>
+    <SolidColorBrush x:Key="ProgressBarForecolor" Color="#FF49D9FF"/>
+    <sys:Double x:Key="ButtonDisabledOpacity">0.42</sys:Double>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#FF08161B" Opacity="0.72"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#FF0C1B24" Opacity="0.72"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="#FFF5F9FF"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}" Color="#FFF5F9FF"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.GrayTextBrushKey}" Color="#FF91A0B5"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#FF21899A" Opacity="0.72"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuBrushKey}" Color="#FF0D252C" Opacity="0.98"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuBarBrushKey}" Color="#FF0D252C" Opacity="0.98"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuHighlightBrushKey}" Color="#FF1D5864" Opacity="0.92"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuTextBrushKey}" Color="#FFF5F9FF"/>
+
+    <Style TargetType="{x:Type Window}">
+        <Setter Property="Background" Value="{DynamicResource GlassBackdropBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text,Segoe UI"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+    </Style>
+    <ControlTemplate x:Key="GlassWindowTemplate" TargetType="{x:Type Window}">
+        <Border Background="{DynamicResource GlassBackdropBrush}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                TextElement.Foreground="{DynamicResource GlassTextBrush}" TextElement.FontFamily="Segoe UI Variable Text,Segoe UI" TextElement.FontSize="13"
+                TextOptions.TextFormattingMode="Display">
+            <Grid>
+                <glass:GlassPanelField x:Name="PART_GlassPanelField"/>
+                <AdornerDecorator>
+                    <ContentPresenter/>
+                </AdornerDecorator>
+                <ResizeGrip x:Name="WindowResizeGrip" HorizontalAlignment="Right" VerticalAlignment="Bottom" IsTabStop="False" Visibility="Collapsed"/>
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="ResizeMode" Value="CanResizeWithGrip"/>
+                    <Condition Property="WindowState" Value="Normal"/>
+                </MultiTrigger.Conditions>
+                <Setter TargetName="WindowResizeGrip" Property="Visibility" Value="Visible"/>
+            </MultiTrigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+    <Style TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+    </Style>
+
+
+
+    <Style TargetType="{x:Type Label}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+    </Style>
+    <Style TargetType="{x:Type RadioButton}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassInputBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/></Trigger>
+            <Trigger Property="IsChecked" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource GlassAccentBrush}"/><Setter Property="Background" Value="{DynamicResource GlassAccentSoftBrush}"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassInputBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="SelectionBrush" Value="{DynamicResource GlassAccentSoftBrush}"/>
+        <Setter Property="Padding" Value="8,5"/>
+        <Style.Triggers>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/></Trigger>
+            <Trigger Property="IsReadOnly" Value="True"><Setter Property="Background" Value="{DynamicResource GlassInputBrush}"/><Setter Property="Opacity" Value="0.86"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Background" Value="{DynamicResource ControlDisabledBackcolor}"/><Setter Property="Foreground" Value="{DynamicResource GlassMutedTextBrush}"/><Setter Property="Opacity" Value="0.62"/></Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type ComboBox}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassInputBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="8,5"/>
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Style.Triggers>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Background" Value="{DynamicResource ControlDisabledBackcolor}"/><Setter Property="Foreground" Value="{DynamicResource GlassMutedTextBrush}"/><Setter Property="Opacity" Value="0.62"/></Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="GlassToolbarActionButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassPanelSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Margin" Value="4,5,3,5"/>
+        <Setter Property="Padding" Value="13,9"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="11" Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource GlassSurfaceHoverBrush}"/><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/></Trigger>
+                        <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource GlassAccentSoftBrush}"/></Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/></Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource ControlDisabledBackcolor}"/><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/><Setter Property="Opacity" Value="0.58"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type PasswordBox}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassInputBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,7"/>
+        <Style.Triggers>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.48"/></Trigger>
+        </Style.Triggers>
+    </Style>
+
+
+    <Style TargetType="{x:Type ComboBoxItem}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="12,9"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Margin" Value="2"/>
+        <Style.Triggers>
+            <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="{DynamicResource GlassSurfaceHoverBrush}"/></Trigger>
+            <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource GlassAccentSoftBrush}"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type CheckBox}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassInputBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="3"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/><Setter Property="Background" Value="{DynamicResource GlassSurfaceHoverBrush}"/></Trigger>
+            <Trigger Property="IsChecked" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource GlassAccentBrush}"/><Setter Property="Background" Value="{DynamicResource GlassAccentSoftBrush}"/></Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource GlassAccentBrush}"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type ListBox}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource ListViewBackcolor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="5"/>
+        <Setter Property="Effect" Value="{DynamicResource GlassCardShadow}"/>
+    </Style>
+    <Style TargetType="{x:Type ListBoxItem}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="8,7"/>
+        <Setter Property="Margin" Value="2"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource GlassSurfaceHoverBrush}"/></Trigger>
+            <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource GlassAccentSoftBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/></Trigger>
+        </Style.Triggers>
+    </Style>
+
+
+    <Style TargetType="{x:Type ProgressBar}">
+        <Setter Property="Height" Value="8"/>
+        <Setter Property="Foreground" Value="{DynamicResource GlassAccentBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource ProgressBarBackcolor}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <Style TargetType="{x:Type Slider}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassAccentBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource ProgressBarBackcolor}"/>
+        <Setter Property="MinHeight" Value="28"/>
+    </Style>
+
+    <Style TargetType="{x:Type TabControl}"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/></Style>
+
+
+    <Style TargetType="{x:Type ContextMenu}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassSurfaceStrongBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10"/>
+        <Setter Property="Opacity" Value="0.98"/>
+        <Setter Property="Effect" Value="{DynamicResource GlassCardShadow}"/>
+    </Style>
+    <Style TargetType="{x:Type MenuItem}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="14,10"/>
+        <Setter Property="Margin" Value="2"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Style.Triggers>
+            <Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="{DynamicResource GlassSurfaceHoverBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/></Trigger>
+            <Trigger Property="IsSubmenuOpen" Value="True"><Setter Property="Background" Value="{DynamicResource GlassAccentSoftBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource GlassAccentBrush}"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.42"/></Trigger>
+        </Style.Triggers>
+    </Style>
+    <Style TargetType="{x:Type ToolTip}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassSurfaceStrongBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="9,6"/>
+        <Setter Property="Opacity" Value="0.98"/>
+    </Style>
+    <Style TargetType="{x:Type Separator}"><Setter Property="Background" Value="{DynamicResource GlassBorderBrush}"/><Setter Property="Height" Value="1"/><Setter Property="Margin" Value="7,5"/></Style>
+
+
+    <Style TargetType="{x:Type Menu}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassPanelSurfaceBrush}"/>
+        <Setter Property="Padding" Value="6,4"/>
+    </Style>
+    <Style TargetType="{x:Type ToolBar}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassSurfaceBrush}"/>
+    </Style>
+    <Style TargetType="{x:Type StatusBar}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassMutedTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1,1,1,0"/>
+    </Style>
+    <Style TargetType="{x:Type GroupBox}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="12"/>
+        <Setter Property="Margin" Value="4"/>
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" FontWeight="SemiBold" Foreground="{DynamicResource GlassTextBrush}"/>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="{x:Type Expander}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassSurfaceBrush}"/>
+    </Style>
+
+    <Style x:Key="GlassTextBox" TargetType="{x:Type TextBox}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassInputBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="SelectionBrush" Value="{DynamicResource GlassAccentSoftBrush}"/>
+        <Setter Property="Padding" Value="9,6"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TextBox}">
+                    <Grid RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform><ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1"/></Grid.RenderTransform>
+                        <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" SnapsToDevicePixels="True"/>
+                        <Border x:Name="Specular" Background="{DynamicResource GlassSpecularBrush}" CornerRadius="8" Opacity="0.20" IsHitTestVisible="False"/>
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/>
+                            <Setter TargetName="Specular" Property="Opacity" Value="0.34"/>
+                            <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1.012" Duration="0:0:0.12"/><DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1.012" Duration="0:0:0.12"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
+                            <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.14"/><DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.14"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/><Setter TargetName="Specular" Property="Opacity" Value="0.42"/></Trigger>
+                        <Trigger Property="IsReadOnly" Value="True"><Setter TargetName="Specular" Property="Opacity" Value="0.14"/></Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource GlassDisabledInputBrush}"/><Setter Property="Foreground" Value="{DynamicResource GlassDisabledTextBrush}"/><Setter TargetName="Specular" Property="Opacity" Value="0.08"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GlassComboBox" TargetType="{x:Type ComboBox}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource GlassInputBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,6,38,6"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ComboBox}">
+                    <Grid RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform><ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1"/></Grid.RenderTransform>
+                        <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8"/>
+                        <Border x:Name="Specular" Background="{DynamicResource GlassSpecularBrush}" CornerRadius="8" Opacity="0.22" IsHitTestVisible="False"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"/>
+                        <ToggleButton x:Name="Toggle" Focusable="False" Background="Transparent" BorderThickness="0" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" ClickMode="Press">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                    <Border Background="Transparent">
+                                        <Path x:Name="Arrow" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,13,0" Fill="{DynamicResource GlassMutedTextBrush}" Data="M 0 0 L 5 5 L 10 0 Z"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Arrow" Property="Fill" Value="{DynamicResource GlassTextBrush}"/></Trigger></ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
+                            <Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" Margin="0,6,0,0" Background="{DynamicResource GlassSurfaceStrongBrush}" BorderBrush="{DynamicResource GlassBorderStrongBrush}" BorderThickness="1" CornerRadius="10" Padding="5" Effect="{DynamicResource GlassMenuShadow}">
+                                <ScrollViewer MaxHeight="{TemplateBinding MaxDropDownHeight}" SnapsToDevicePixels="True"><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/></ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/><Setter TargetName="Specular" Property="Opacity" Value="0.36"/></Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/></Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/>
+                            <Setter TargetName="Specular" Property="Opacity" Value="0.46"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1.012" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1.012" Duration="0:0:0.12"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource GlassDisabledInputBrush}"/><Setter Property="Foreground" Value="{DynamicResource GlassDisabledTextBrush}"/><Setter TargetName="Specular" Property="Opacity" Value="0.08"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <Style x:Key="GlassAuroraOrbA" TargetType="{x:Type Ellipse}">
+        <Setter Property="RenderTransform"><Setter.Value><TranslateTransform/></Setter.Value></Setter>
+        <Style.Triggers><EventTrigger RoutedEvent="FrameworkElement.Loaded"><BeginStoryboard><Storyboard RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="-24" To="28" Duration="0:0:14"/>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-12" To="18" Duration="0:0:17"/>
+        </Storyboard></BeginStoryboard></EventTrigger></Style.Triggers>
+    </Style>
+    <Style x:Key="GlassAuroraOrbB" TargetType="{x:Type Ellipse}">
+        <Setter Property="RenderTransform"><Setter.Value><TranslateTransform/></Setter.Value></Setter>
+        <Style.Triggers><EventTrigger RoutedEvent="FrameworkElement.Loaded"><BeginStoryboard><Storyboard RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="18" To="-30" Duration="0:0:18"/>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="-20" To="24" Duration="0:0:15"/>
+        </Storyboard></BeginStoryboard></EventTrigger></Style.Triggers>
+    </Style>
+    <Style x:Key="GlassAuroraOrbC" TargetType="{x:Type Ellipse}">
+        <Setter Property="RenderTransform"><Setter.Value><TranslateTransform/></Setter.Value></Setter>
+        <Style.Triggers><EventTrigger RoutedEvent="FrameworkElement.Loaded"><BeginStoryboard><Storyboard RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="-16" To="22" Duration="0:0:20"/>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="26" To="-18" Duration="0:0:19"/>
+        </Storyboard></BeginStoryboard></EventTrigger></Style.Triggers>
+    </Style>
+
+
+    <Style x:Key="GlassSettingsNavItem" TargetType="{x:Type ListBoxItem}">
+        <Setter Property="Foreground" Value="{DynamicResource GlassMutedTextBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Margin" Value="2,3"/>
+        <Setter Property="Padding" Value="6"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                    <Border x:Name="NavChrome" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="10" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="NavChrome" Property="Background" Value="{DynamicResource GlassSurfaceHoverBrush}"/><Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/></Trigger>
+                        <Trigger Property="IsSelected" Value="True"><Setter TargetName="NavChrome" Property="Background" Value="{DynamicResource GlassAccentSoftBrush}"/><Setter TargetName="NavChrome" Property="BorderBrush" Value="{DynamicResource GlassBorderStrongBrush}"/><Setter Property="Foreground" Value="{DynamicResource GlassTextBrush}"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="GlassCard" TargetType="{x:Type Border}">
+        <Setter Property="Background" Value="{DynamicResource GlassSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Effect" Value="{DynamicResource GlassCardShadow}"/>
+    </Style>
+</ResourceDictionary>

@@ -1,0 +1,9 @@
+{
+  "name": "admff.native_host",
+  "description": "Native messaging host for Axioos Download Manager",
+  "path": "adm-app-host.exe",
+  "type": "stdio",
+  "allowed_extensions": [
+    "adm-browser-helper@axioos.app"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adm.local/schema/browser-protocol/v1/command-result.schema.json",
+  "title": "ADM Browser Protocol v1 CommandResult",
+  "allOf": [
+    { "$ref": "envelope.schema.json" },
+    {
+      "properties": {
+        "type": { "const": "CommandResult" },
+        "payload": {
+          "type": "object",
+          "required": ["status", "code", "detail"],
+          "properties": {
+            "status": { "enum": ["accepted", "rejected", "duplicate", "busy", "unsupported", "error"] },
+            "code": { "type": "string", "minLength": 1 },
+            "detail": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      }
+    }
+  ]
+}

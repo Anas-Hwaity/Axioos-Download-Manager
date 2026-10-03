@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+
+namespace ADM.Core.UI
+{
+    public class DownloadListEventArgs : EventArgs
+    {
+        public IEnumerable<string> Downloads { get; }
+        public DownloadListEventArgs(IEnumerable<string> downloads)
+        {
+            this.Downloads = downloads;
+        }
+    }
+}

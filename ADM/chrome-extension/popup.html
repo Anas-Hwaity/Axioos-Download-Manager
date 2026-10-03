@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="styles.css">
+  <script src="extension-theme.js"></script>
+  <script src="theme-page.js"></script>
+  <script src="popup.js"></script>
+</head>
+
+<body>
+  <div class="adm-shell">
+    <div class="adm-header">
+      <img class="adm-logo" src="icon48.png" alt="" width="22" height="22">
+      <span class="adm-title">Axioos</span>
+      <span class="adm-subtitle" id="count"></span>
+    </div>
+    <div class="adm-list" id="list" role="menu">
+      <div class="adm-empty" id="empty">No downloadable media detected on this page yet. Play the video to detect it.</div>
+    </div>
+    <div class="adm-actions" id="actions" hidden>
+      <button class="adm-button" id="clear" type="button">Clear detected media</button>
+    </div>
+    <div class="adm-footer">
+      <label class="adm-switch">
+        <input type="checkbox" id="chk">
+        <span class="adm-track"></span>
+        <span>Browser monitoring</span>
+      </label>
+      <span class="adm-hint">Play a quality to detect it</span>
+    </div>
+  </div>
+</body>
+
+</html>

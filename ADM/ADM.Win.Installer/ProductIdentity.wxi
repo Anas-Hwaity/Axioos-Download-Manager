@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<?define ProductDisplayName="Axioos Download Manager"?>
+<?define AppExeName="adm-app.exe"?>
+<?define CustomProtocolScheme="adm-app"?>
+<?define ChromeNativeHostName="adm_chrome.native_host"?>
+<?define FirefoxNativeHostName="admff.native_host"?>
+</Include>

@@ -1,0 +1,118 @@
+<Window x:Class="ADM.Wpf.UI.Dashboard.DownloadDashboardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dashboard="clr-namespace:ADM.Wpf.UI.Dashboard"
+        Title="{StaticResource DASHBOARD_TITLE}"
+        Width="1060" Height="680" MinWidth="860" MinHeight="520"
+        WindowStartupLocation="CenterOwner"
+        AutomationProperties.AutomationId="DownloadDashboardWindow"
+        Template="{StaticResource GlassWindowTemplate}">
+    <Window.Resources>
+        <ResourceDictionary Source="/Resources/GlassScrollChrome.xaml"/>
+    </Window.Resources>
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border CornerRadius="16" Padding="14,10" Margin="0,0,0,10"
+                Background="{DynamicResource GlassPanelSurfaceBrush}"
+                BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+            <TextBlock Text="{StaticResource DASHBOARD_ACTIVE_DOWNLOADS}" FontSize="18" FontWeight="SemiBold"
+                       Foreground="{DynamicResource GlassTextBrush}"/>
+        </Border>
+        <ListView Grid.Row="1" ItemsSource="{Binding Items}" Background="Transparent" BorderThickness="0"
+                  ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True"
+                  VirtualizingPanel.VirtualizationMode="Recycling"
+                  AutomationProperties.AutomationId="DownloadDashboardList">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate><VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"/></ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="0,0,0,10" Padding="14" CornerRadius="16"
+                            Background="{DynamicResource GlassPanelSurfaceBrush}"
+                            BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Snapshot.FileName}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource GlassTextBrush}"/>
+                                <TextBlock Text="{Binding Snapshot.SourceHost, StringFormat=Host: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                <TextBlock Text="{Binding Snapshot.SanitizedSourceUrl}" Foreground="{DynamicResource GlassMutedTextBrush}" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding Snapshot.Percent, StringFormat={}{0:F1}%}" FontSize="18" Foreground="{DynamicResource GlassTextBrush}" Margin="14,0,0,0"/>
+                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Height="6" Margin="0,10,0,8" Minimum="0" Maximum="100" Value="{Binding Snapshot.Percent}"/>
+                            <Grid Grid.Row="2" Grid.ColumnSpan="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Snapshot.LifecycleState, StringFormat=State: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.DownloadedBytes, StringFormat=Downloaded: {0} B}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.TotalBytes, StringFormat=Total: {0} B}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding Snapshot.CurrentBytesPerSecond, StringFormat=Speed: {0:F0} B/s}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.AverageBytesPerSecond, StringFormat=Average: {0:F0} B/s}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="{Binding Snapshot.EtaSeconds, StringFormat=ETA: {0:F0} s}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.ResumeCapability, StringFormat=Resume: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="{Binding Snapshot.ActiveConnections, StringFormat=Connections: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.AttemptId, StringFormat=Attempt: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Grid>
+                            <dashboard:DashboardTelemetryGraph Grid.Row="3" Grid.ColumnSpan="2" Height="90" Margin="0,10,0,0"
+                                                               SpeedSeries="{Binding SpeedSeries}"
+                                                               Ranges="{Binding Snapshot.Ranges}"/>
+                            <Grid Grid.Row="4" Grid.ColumnSpan="2" Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Snapshot.RefreshSourceState, StringFormat=Source refresh: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.RetryState, StringFormat=Retry: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.RecoveryStatus, StringFormat=Recovery: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.LastError, StringFormat=Last error: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Snapshot.SegmentSnapshots.Count, StringFormat=Segments: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{StaticResource DASHBOARD_ERROR_HISTORY}" Foreground="{DynamicResource GlassMutedTextBrush}" Margin="0,4,0,0"/>
+                                    <ItemsControl ItemsSource="{Binding ErrorHistory}" MaxHeight="72">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}" Foreground="{DynamicResource GlassMutedTextBrush}" TextWrapping="Wrap" Margin="8,1,0,0"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <Button Content="{StaticResource DASHBOARD_PAUSE}" Padding="10,5" Margin="3" Style="{StaticResource GlassToolbarActionButton}"
+                                            Command="{Binding DataContext.PauseCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding Snapshot.DownloadId}"/>
+                                    <Button Content="{StaticResource DASHBOARD_RESUME}" Padding="10,5" Margin="3" Style="{StaticResource GlassToolbarActionButton}"
+                                            Command="{Binding DataContext.ResumeCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding Snapshot.DownloadId}"/>
+                                    <Button Content="{StaticResource DASHBOARD_RETRY}" Padding="10,5" Margin="3" Style="{StaticResource GlassToolbarActionButton}"
+                                            Command="{Binding DataContext.RetryCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding Snapshot.DownloadId}"/>
+                                    <Button Content="{StaticResource DASHBOARD_CANCEL}" Padding="10,5" Margin="3" Style="{StaticResource GlassToolbarActionButton}"
+                                            Command="{Binding DataContext.CancelCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding Snapshot.DownloadId}"/>
+                                    <Button Content="{StaticResource DASHBOARD_REFRESH_SOURCE}" Padding="10,5" Margin="3" Style="{StaticResource GlassToolbarActionButton}"
+                                            Command="{Binding DataContext.RefreshSourceCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding Snapshot.DownloadId}"/>
+                                    <Button Content="{StaticResource DASHBOARD_DETAILS}" Padding="10,5" Margin="3" Style="{StaticResource GlassToolbarActionButton}"
+                                            Command="{Binding DataContext.ShowProgressCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding Snapshot.DownloadId}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Window>

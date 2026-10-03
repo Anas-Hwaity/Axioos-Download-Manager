@@ -1,0 +1,65 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:pOptions="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+    <SolidColorBrush x:Key="CategoryForegroundNormal" Color="#FFAAC3D8"/>
+    <SolidColorBrush x:Key="CategoryForegroundSelected" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="CategoryHighlight" pOptions:Freeze="False" Color="#FF3977F6" Opacity="0.68"/>
+    <SolidColorBrush x:Key="CategoryListBackground" pOptions:Freeze="False" Color="#FF071324" Opacity="0.70"/>
+    <SolidColorBrush x:Key="CategoryMouseOverBackground" pOptions:Freeze="False" Color="#FF152D59" Opacity="0.66"/>
+    <SolidColorBrush x:Key="ButtonBackcolor" pOptions:Freeze="False" Color="#FF10203A" Opacity="0.74"/>
+    <SolidColorBrush x:Key="ButtonForecolor" Color="#FFF6F9FF"/>
+    <SolidColorBrush x:Key="ButtonMouseOverBackcolor" pOptions:Freeze="False" Color="#FF1D3D70" Opacity="0.86"/>
+    <SolidColorBrush x:Key="ButtonMousePressedBackcolor" pOptions:Freeze="False" Color="#FF172850" Opacity="0.94"/>
+    <SolidColorBrush x:Key="ButtonDisabledBackcolor" Color="#FF09111F" Opacity="0.52"/>
+    <SolidColorBrush x:Key="ButtonBorder" Color="#FF91CFFF" Opacity="0.24"/>
+    <SolidColorBrush x:Key="ButtonFocusedBorder" Color="#FF5FE4FF"/>
+    <SolidColorBrush x:Key="ButtonOverBackcolor" Color="#FF1D3D70" Opacity="0.86"/>
+    <SolidColorBrush x:Key="ToolButtonForecolor" Color="#FFEAF2FF"/>
+    <SolidColorBrush x:Key="ToolButtonMouseOverBackcolor" pOptions:Freeze="False" Color="#FF1B3970" Opacity="0.68"/>
+    <SolidColorBrush x:Key="ToolButtonMousePressedBackcolor" pOptions:Freeze="False" Color="#FF162951" Opacity="0.80"/>
+    <SolidColorBrush x:Key="ToolButtonMouseDisabledForecolor" Color="#FF687C9D"/>
+    <SolidColorBrush x:Key="ToolbarBordercolor" Color="#FFA8DAFF" Opacity="0.18"/>
+    <SolidColorBrush x:Key="SearchBorder" Color="#FFA8DAFF" Opacity="0.22"/>
+    <SolidColorBrush x:Key="SearchBackcolor" pOptions:Freeze="False" Color="#FF09172A" Opacity="0.72"/>
+    <SolidColorBrush x:Key="ControlBackcolor" pOptions:Freeze="False" Color="#FF081424" Opacity="0.72"/>
+    <SolidColorBrush x:Key="ControlBordercolor" Color="#FF9FD6FF" Opacity="0.18"/>
+    <SolidColorBrush x:Key="ControlForecolor" Color="#FFEAF3FF"/>
+    <SolidColorBrush x:Key="TextBackcolor" pOptions:Freeze="False" Color="#FF0A1930" Opacity="0.76"/>
+    <SolidColorBrush x:Key="TextForecolor" Color="#FFF7FAFF"/>
+    <SolidColorBrush x:Key="DisabledTextBackcolor" Color="#FF091321" Opacity="0.58"/>
+    <SolidColorBrush x:Key="TextMouseOverBorder" Color="#FF5FE4FF" Opacity="0.82"/>
+    <SolidColorBrush x:Key="TextBorder" Color="#FFA7D8FF" Opacity="0.21"/>
+    <SolidColorBrush x:Key="TextFocusedBorder" Color="#FF6AE8FF"/>
+    <SolidColorBrush x:Key="ListViewBackcolor" pOptions:Freeze="False" Color="#FF071322" Opacity="0.64"/>
+    <SolidColorBrush x:Key="ListViewForecolor" Color="#FFEEF4FF"/>
+    <SolidColorBrush x:Key="ListViewMouseOverBackcolor" pOptions:Freeze="False" Color="#FF173466" Opacity="0.62"/>
+    <SolidColorBrush x:Key="ListViewMouseOverForecolor" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="ListViewSelectedForecolor" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="ListViewSelectedBackcolor" pOptions:Freeze="False" Color="#FF2B61D7" Opacity="0.72"/>
+    <SolidColorBrush x:Key="ListViewIconForecolor" Color="#FF91B9D7"/>
+    <SolidColorBrush x:Key="ListViewHeaderForecolor" Color="#FFDCEBFF"/>
+    <SolidColorBrush x:Key="ListViewHeaderBackcolor" pOptions:Freeze="False" Color="#FF10223C" Opacity="0.68"/>
+    <SolidColorBrush x:Key="ListViewHeaderHoverBackcolor" pOptions:Freeze="False" Color="#FF183A68" Opacity="0.80"/>
+    <SolidColorBrush x:Key="ListViewHeaderBordercolor" Color="#FF73CFFF" Opacity="0.28"/>
+    <SolidColorBrush x:Key="ListViewRowBordercolor" Color="#FF75BEEA" Opacity="0.10"/>
+    <SolidColorBrush x:Key="StatusbarBackcolor" pOptions:Freeze="False" Color="#FF081526" Opacity="0.72"/>
+    <SolidColorBrush x:Key="StatusbarIconcolor" Color="#FF9DBAD2"/>
+    <SolidColorBrush x:Key="PlaceHolderForecolor" Color="#FF8095B4"/>
+    <SolidColorBrush x:Key="NewDownloadTextBoxBackground" pOptions:Freeze="False" Color="#FF0A1930" Opacity="0.76"/>
+    <SolidColorBrush x:Key="HyperlinkForecolor" Color="#FF69DFFF"/>
+    <SolidColorBrush x:Key="ScrollBarThumbColorNormal" Color="#FF527BAB" Opacity="0.56"/>
+    <SolidColorBrush x:Key="ScrollBarThumbColorHot" Color="#FF6EC7ED" Opacity="0.82"/>
+    <SolidColorBrush x:Key="ControlDisabledBackcolor" Color="#FF08111E" Opacity="0.56"/>
+    <SolidColorBrush x:Key="TabSelectionColor" Color="#FF58E1FF"/>
+    <SolidColorBrush x:Key="ProgressBarBackcolor" pOptions:Freeze="False" Color="#FF102844" Opacity="0.56"/>
+    <SolidColorBrush x:Key="ProgressBarForecolor" Color="#FF49D9FF"/>
+    <SolidColorBrush x:Key="GlassScrollTrackBrush" pOptions:Freeze="False" Color="#FF081424" Opacity="0.46"/>
+    <SolidColorBrush x:Key="GlassScrollThumbBrush" Color="#FF5B8ED6" Opacity="0.62"/>
+    <SolidColorBrush x:Key="GlassScrollThumbHotBrush" Color="#FF6FCBF2" Opacity="0.86"/>
+    <SolidColorBrush x:Key="GlassScrollThumbPressedBrush" Color="#FF5FE4FF" Opacity="0.96"/>
+    <SolidColorBrush x:Key="GlassScrollButtonHoverBrush" Color="#FF1D3D70" Opacity="0.55"/>
+    <SolidColorBrush x:Key="GlassScrollGlyphBrush" Color="#FF9DBAD2"/>
+    <SolidColorBrush x:Key="GlassScrollGlyphHotBrush" Color="#FFEAF6FF"/>
+    <sys:Double x:Key="ButtonDisabledOpacity">0.44</sys:Double>
+</ResourceDictionary>

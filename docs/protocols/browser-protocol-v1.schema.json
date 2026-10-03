@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.adm.invalid/schemas/browser-protocol-v1.schema.json",
+  "title": "ADM browser protocol v1 envelope",
+  "type": "object",
+  "required": ["protocolVersion", "messageId", "type", "sentAtUtc", "payload"],
+  "properties": {
+    "protocolVersion": { "const": 1 },
+    "messageId": { "type": "string", "format": "uuid", "maxLength": 64 },
+    "sessionId": { "type": ["string", "null"], "maxLength": 64 },
+    "type": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "sentAtUtc": { "type": "string", "format": "date-time", "maxLength": 64 },
+    "replyTo": { "type": ["string", "null"], "maxLength": 64 },
+    "payload": { "type": ["object", "array", "string", "number", "boolean", "null"] }
+  },
+  "additionalProperties": true,
+  "$comment": "Application framing additionally enforces BrowserProtocolV1.MaxApplicationMessageBytes=512 KiB, JSON depth 32, bounded arrays/strings/URLs/headers, and type-specific payload validation."
+}

@@ -1,0 +1,119 @@
+﻿<UserControl x:Class="ADM.Wpf.UI.Dialogs.Settings.BrowserMonitoringView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:ADM.Wpf.UI.Dialogs.Settings"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <DockPanel>
+        <TextBlock Padding="10" Text="{StaticResource SETTINGS_MONITORING}" DockPanel.Dock="Top" FontSize="14" />
+        <ScrollViewer>
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Vertical" Margin="10" Grid.Row="1" Grid.ColumnSpan="4">
+                    <TextBlock TextWrapping="Wrap" Text="{StaticResource DESC_MONITORING_1}"  />
+                    <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="{StaticResource MSG_VID_WIKI_TEXT}" Padding="0,0,10,0" />
+                        <TextBlock Text="{StaticResource MSG_VID_WIKI_LINK}" Foreground="{DynamicResource BrowserWikiLinkBrush}" Name="VideoWikiLink"
+                                   MouseDown="VideoWikiLink_MouseDown" Cursor="Hand"/>
+                    </WrapPanel>
+                </StackPanel>
+                <Grid Grid.Row="2" Grid.ColumnSpan="4" Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Button Name="BtnChrome" Margin="5" Grid.Column="0" Grid.Row="0" Click="BtnChrome_Click"  
+                            Content="Google Chrome" FontSize="18" Foreground="{DynamicResource ControlForecolor}" Padding="10">
+                    </Button>
+                    <Button Name="BtnFirefox" Margin="5" Grid.Column="1" Grid.Row="0" Click="BtnFirefox_Click"
+                            Content="Mozilla Firefox" FontSize="18" Foreground="{DynamicResource ControlForecolor}" Padding="10">
+                    </Button>
+                    <Button Name="BtnEdge" Margin="5" Grid.Column="0" Grid.Row="1" Click="BtnEdge_Click" 
+                            Content="Microsoft Edge" FontSize="18" Foreground="{DynamicResource ControlForecolor}" Padding="10">
+                    </Button>
+                    <Button Name="BtnOpera" Margin="5" Grid.Column="1" Grid.Row="1" Click="BtnOpera_Click"
+                            Content="Opera Browser" FontSize="18" Foreground="{DynamicResource ControlForecolor}" Padding="10">
+                    </Button>
+                    <Button Name="BtnBrave" Margin="5" Grid.Column="0" Grid.Row="2" Click="BtnBrave_Click"
+                            Content="Brave Browser" FontSize="18" Foreground="{DynamicResource ControlForecolor}" Padding="10"/>
+                    <Button Name="BtnVivaldi" Margin="5" Grid.Column="1" Grid.Row="2" Click="BtnVivaldi_Click"
+                            Content="Vivaldi Browser" FontSize="18" Foreground="{DynamicResource ControlForecolor}" Padding="10"/>
+
+                </Grid>
+                <TextBlock Padding="10" TextWrapping="Wrap" Text="{StaticResource DESC_OTHER_BROWSERS}" Grid.Row="3" Grid.ColumnSpan="4" />
+                <TextBlock Padding="10" TextWrapping="Wrap" Text="{StaticResource DESC_CHROME}" Grid.Row="4" Grid.ColumnSpan="2" />
+                <TextBox Style="{StaticResource GlassTextBox}" IsReadOnly="True" Name="TxtChromeWebStoreUrl" Text="{Binding ChromeWebStoreUrl, Mode=OneWay}" Grid.Row="4" Grid.Column="2" Margin="5" VerticalContentAlignment="Center" AcceptsReturn="False" TextWrapping="NoWrap" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                <Button Grid.Row="4" Grid.Column="3" Margin="5" Padding="3" Name="BtnCopy1" Click="BtnCopy1_Click">
+                    <Path Data="{StaticResource ri-file-copy-line}" Fill="{DynamicResource ControlForecolor}" 
+                  Width="16" Height="16" Stretch="Fill"/>
+                </Button>
+                <TextBlock Padding="10" TextWrapping="Wrap" Text="{StaticResource DESC_MOZ}" Grid.Row="5" Grid.ColumnSpan="2" />
+                <TextBox Style="{StaticResource GlassTextBox}" IsReadOnly="True" Name="TxtFirefoxAMOUrl" Text="{Binding FirefoxExtensionUrl, Mode=OneWay}" Grid.Row="5" Grid.Column="2" Margin="5" VerticalContentAlignment="Center" AcceptsReturn="False" TextWrapping="NoWrap" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                <Button Grid.Row="5" Grid.Column="3" Margin="5" Padding="3" Name="BtnCopy2" Click="BtnCopy2_Click">
+                    <Path Data="{StaticResource ri-file-copy-line}" Fill="{DynamicResource ControlForecolor}" 
+                  Width="16" Height="16" Stretch="Fill"/>
+                </Button>
+                <TextBlock Margin="10,15,10,5" TextWrapping="Wrap" Text="{StaticResource DESC_FILETYPES}" Grid.Row="6" Grid.ColumnSpan="4" />
+                <TextBox Style="{StaticResource GlassTextBox}" Name="TxtDefaultFileTypes" Text="{Binding FileExtensions, UpdateSourceTrigger=PropertyChanged}" Padding="5" Grid.Row="7" Grid.ColumnSpan="4" Height="50" Margin="10,5,10,10" TextWrapping="Wrap"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  ScrollViewer.CanContentScroll="True" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                <Button Name="BtnDefault1" Grid.Row="8" Grid.Column="0" Margin="10,0" Padding="3" Content="{StaticResource DESC_DEF}" Click="BtnDefault1_Click" />
+                <TextBlock Margin="10,15,10,5" TextWrapping="Wrap" Text="{StaticResource DESC_VIDEOTYPES}" Grid.Row="9" Grid.ColumnSpan="4" />
+                <TextBox Style="{StaticResource GlassTextBox}" Name="TxtDefaultVideoFormats" Text="{Binding VideoExtensions, UpdateSourceTrigger=PropertyChanged}" Padding="5" Grid.Row="10" Grid.ColumnSpan="4" Height="50" Margin="10,5,10,10" TextWrapping="Wrap"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  ScrollViewer.CanContentScroll="True" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                <Button Name="BtnDefault2" Click="BtnDefault2_Click" Grid.Row="11" Grid.Column="0" Margin="10,0" Padding="3" Content="{StaticResource DESC_DEF}" />
+                <TextBlock Margin="10,15,10,5" TextWrapping="Wrap" Text="{StaticResource LBL_MIN_VIDEO_SIZE}" Grid.Row="12" Grid.ColumnSpan="2" />
+                <StackPanel Orientation="Horizontal" Grid.Row="12" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right">
+                    <ComboBox Style="{StaticResource GlassComboBox}" Margin="5" Name="CmbMinVidSize" ItemsSource="{Binding MinimumVideoSizes}" SelectedItem="{Binding MinVideoSize}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                    <TextBlock VerticalAlignment="Center" Margin="5">KB</TextBlock>
+                </StackPanel>
+                <TextBlock Margin="10,15,10,5" TextWrapping="Wrap" Text="{StaticResource DESC_SITEEXCEPTIONS}" Grid.Row="13" Grid.ColumnSpan="4" />
+                <TextBox Style="{StaticResource GlassTextBox}" Name="TxtExceptions" Text="{Binding BlockedHosts, UpdateSourceTrigger=PropertyChanged}" Padding="5" Grid.Row="14" Grid.ColumnSpan="4" Height="50" Margin="10,5,10,10" TextWrapping="Wrap"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  ScrollViewer.CanContentScroll="True" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                <Button Name="BtnDefault3" Click="BtnDefault3_Click" Grid.Row="15" Grid.Column="0" Margin="10,0" Padding="3" Content="{StaticResource DESC_DEF}" />
+                <CheckBox Name="ChkMonitorClipboard" IsChecked="{Binding MonitorClipboard}" Grid.Row="16" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" Margin="10,15,10,10" Padding="3" Content="{StaticResource MENU_CLIP_ADD}"/>
+                <CheckBox Name="ChkTimestamp" IsChecked="{Binding FetchServerTimeStamp}" Grid.Row="17" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" Margin="10,0" Padding="3" Content="{StaticResource LBL_GET_TIMESTAMP}"/>
+                <CheckBox Name="ChkShowMediaNotification" IsChecked="{Binding ShowNotification}" Grid.Row="18" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" Margin="10,10" Padding="3" Content="{StaticResource MSG_SHOW_MEDIA_NOTIFICATION}"/>
+            </Grid>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

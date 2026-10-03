@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?define ProductVersion = "$(env.BUILD_VER)"?>
+<?define ProductUpgradeCode="$(env.PRODUCT_UPGRADE_CODE)"?>
+<?ifndef CabCompression?>
+<?define CabCompression="high"?>
+<?endif?>
+<?include ProductIdentity.wxi?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"  xmlns:ui="http://schemas.microsoft.com/wix/UIExtension">
+  <Product Id="*" Name="$(var.ProductDisplayName)" Codepage="utf-32" Language="1033" Version="$(var.ProductVersion)" Manufacturer="Anas Al Hwaity" UpgradeCode="$(var.ProductUpgradeCode)">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade AllowDowngrades="yes"
+                  Schedule="afterInstallInitialize"
+                  AllowSameVersionUpgrades="no" />
+	
+	<Condition Message="Axioos needs Windows 10 or newer.">
+		<![CDATA[Installed OR (VersionNT > 602)]]>
+	</Condition>
+	
+	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open $(var.ProductDisplayName)" />
+	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
+	
+	<WixVariable Id="WixUILicenseRtf" Value="gpl-2.0.rtf" />
+	<Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+	
+	<UI>
+        <UIRef Id="WixUI_InstallDir" />
+        <Publish Dialog="ExitDialog" 
+            Control="Finish" 
+            Event="DoAction" 
+            Value="LaunchADM">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+	
+    <MediaTemplate EmbedCab="yes" CompressionLevel="$(var.CabCompression)"  />
+	
+	<Feature Id="ProductFeature" Title="ADM" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+	  <ComponentGroupRef Id="NET4" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="ProgramShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+    <CustomAction Id="LaunchADM"  Directory="INSTALLFOLDER" ExeCommand='"[INSTALLFOLDER]$(var.AppExeName)" --first-run'  Return="asyncNoWait" Impersonate="yes"/>
+
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Axioos">
+        </Directory>
+      </Directory>
+      <Directory Id="DesktopFolder"/>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ProgramMenuSubFolder" Name="$(var.ProductDisplayName)"></Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+	  <Component Id="RegistryEntries" Guid="*">
+        <RegistryKey Root="HKCU"
+                     Key="Software\Microsoft\Windows\CurrentVersion\Run">
+            <RegistryValue Type="string" Name="ADM" Value='"[INSTALLFOLDER]$(var.AppExeName)" --background'/>
+        </RegistryKey>
+		<RegistryKey Root="HKCR"
+                     Key="$(var.CustomProtocolScheme)">
+            <RegistryValue Type="string" Value='URL:Axioos Download Manager'/>
+			<RegistryValue Type="string" Name='URL Protocol' Value='' />
+        </RegistryKey>
+		<RegistryKey Root="HKCR"
+                     Key="$(var.CustomProtocolScheme)\shell\open\command">
+            <RegistryValue Type="string" Value='"[INSTALLFOLDER]$(var.AppExeName)" "%1"'/>
+        </RegistryKey>
+		<RegistryKey Root="HKCU"
+                     Key="Software\Google\Chrome\NativeMessagingHosts\$(var.ChromeNativeHostName)">
+            <RegistryValue Type="string" Value='[INSTALLFOLDER]ADM.App.Host\$(var.ChromeNativeHostName).json'/>
+        </RegistryKey>
+		<RegistryKey Root="HKCU"
+                     Key="Software\Microsoft\Edge\NativeMessagingHosts\$(var.ChromeNativeHostName)">
+            <RegistryValue Type="string" Value='[INSTALLFOLDER]ADM.App.Host\$(var.ChromeNativeHostName).json'/>
+        </RegistryKey>
+		<RegistryKey Root="HKCU"
+                     Key="Software\Chromium\NativeMessagingHosts\$(var.ChromeNativeHostName)">
+            <RegistryValue Type="string" Value='[INSTALLFOLDER]ADM.App.Host\$(var.ChromeNativeHostName).json'/>
+        </RegistryKey>
+    </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <Icon Id="AppIcon" SourceFile="icon.ico"/>
+    <DirectoryRef Id="ProgramMenuSubFolder">
+      <Component Id="StartMenuShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab43168cef">
+        <Shortcut Id="AppStartMenuShortcut" Name="$(var.ProductDisplayName)" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]$(var.AppExeName)'  Advertise="no"></Shortcut>
+        <RegistryValue Root="HKCU" Key="Software\$(var.ProductDisplayName)" Name="Installed1" Type="integer" Value="1" KeyPath="yes"/>
+        <RemoveFolder Id="ProgramMenuSubFolder" On="uninstall"/>
+      </Component>
+    </DirectoryRef>
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="ProgramShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab53168cef">
+        <Shortcut Id="AppShortcut" Name="$(var.ProductDisplayName)" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]$(var.AppExeName)'  Advertise="no"></Shortcut>
+        <RegistryValue Root="HKLM" Key="Software\$(var.ProductDisplayName)" Name="Installed2" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab53268cef">
+        <Shortcut Id="AppDesktopShortcut"  Name="$(var.ProductDisplayName)" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]$(var.AppExeName)'  Advertise="no"></Shortcut>
+        <RegistryValue Root="HKCU" Key="Software\$(var.ProductDisplayName)" Name="Installed3" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+
+</Wix>

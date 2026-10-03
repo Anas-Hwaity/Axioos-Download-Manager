@@ -1,0 +1,10 @@
+{
+  "name": "adm_chrome.native_host",
+  "description": "Native messaging host for Axioos Download Manager",
+  "path": "adm-app-host.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://akdmdglbephckgfmdffcdebnpjgamofc/",
+    "chrome-extension://bobopmadclgeepbcnddbeoaalhfkljep/"
+  ]
+}

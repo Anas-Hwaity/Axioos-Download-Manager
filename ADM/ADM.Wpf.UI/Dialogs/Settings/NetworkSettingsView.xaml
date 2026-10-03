@@ -1,0 +1,129 @@
+﻿<UserControl x:Class="ADM.Wpf.UI.Dialogs.Settings.NetworkSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:ADM.Wpf.UI.Dialogs.Settings"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <DockPanel>
+        <TextBlock Padding="10" Text="{StaticResource SETTINGS_NETWORK}" DockPanel.Dock="Top" FontSize="14"/>
+        <ScrollViewer Margin="0,0,0,10">
+            <Grid Margin="10,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="{StaticResource DESC_NET1}" Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Center"  
+                           Grid.Row="0"/>
+                <ComboBox Style="{StaticResource GlassComboBox}" Margin="5" Name="CmbTimeOut" ItemsSource="{Binding TimeoutOptions}" SelectedItem="{Binding NetworkTimeout, Mode=TwoWay}" HorizontalAlignment="Right" Grid.Column="3" Grid.Row="0"
+                              VerticalAlignment="Center" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                <TextBlock Text="{StaticResource DESC_NET2}" Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Center"  
+                           Grid.Row="1"/>
+                <ComboBox Style="{StaticResource GlassComboBox}" Margin="5" Name="CmbMaxSegments" ItemsSource="{Binding MaxSegmentOptions}" SelectedItem="{Binding MaxSegments, Mode=TwoWay}" HorizontalAlignment="Right" Grid.Column="3" Grid.Row="1"
+                              VerticalAlignment="Center" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                <TextBlock Text="{StaticResource NET_MAX_RETRY}" Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Center"  
+                           Grid.Row="2"/>
+                <ComboBox Style="{StaticResource GlassComboBox}" Margin="5" Name="CmbMaxRetry" ItemsSource="{Binding MaxRetryOptions}" SelectedItem="{Binding MaxRetry, Mode=TwoWay}" HorizontalAlignment="Right" Grid.Column="3" Grid.Row="2"
+                              VerticalAlignment="Center" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                <CheckBox Name="ChkEnableSpeedLimit" IsChecked="{Binding EnableSpeedLimit, Mode=TwoWay}" Content="{StaticResource MSG_SPEED_LIMIT}" Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Center"
+                           Grid.Row="3"/>
+                <TextBox Style="{StaticResource GlassTextBox}" Name="TxtMaxSpeedLimit" Text="{Binding MaxSpeedLimit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="3" Grid.Row="3" Margin="5" VerticalAlignment="Center" Padding="5"
+                         PreviewTextInput="TxtSpeedLimit_PreviewTextInput"
+                 DataObject.Pasting="TxtSpeedLimit_Pasting"
+                 LostFocus="TxtSpeedLimit_LostFocus"
+                         TextWrapping="NoWrap" 
+                 AcceptsReturn="False"
+                 VerticalContentAlignment="Center" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                <Grid Grid.ColumnSpan="3" Grid.Row="4" Margin="0,10,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0"
+                        Text="{StaticResource DESC_NET4}"
+                               Margin="5,10"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0"
+                        Text="{StaticResource PROXY_HOST}"
+                               Margin="5,10"/>
+                    <TextBlock Grid.Row="2" Grid.Column="0"
+                        Text="{StaticResource PROXY_PORT}"
+                               Margin="5,10"/>
+                    <TextBlock Grid.Row="3" Grid.Column="0"
+                        Text="{StaticResource DESC_NET7}"
+                               Margin="5,10"/>
+                    <TextBlock Grid.Row="4" Grid.Column="0"
+                        Text="{StaticResource DESC_NET8}"
+                               Margin="5,10"/>
+                    <ComboBox Style="{StaticResource GlassComboBox}" Grid.Row="0" Grid.Column="1"
+                              Margin="5" Grid.ColumnSpan="3"
+                              Name="CmbProxyType" SelectedIndex="{Binding ProxyTypeIndex, Mode=TwoWay}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1">
+                        <ComboBoxItem Content="{StaticResource NET_SYSTEM_PROXY}"/>
+                        <ComboBoxItem Content="{StaticResource ND_NO_PROXY}"/>
+                        <ComboBoxItem Content="{StaticResource ND_MANUAL_PROXY}"/>
+                    </ComboBox>
+                    <TextBox Style="{StaticResource GlassTextBox}" Name="TxtProxyHost" Text="{Binding ProxyHost, Mode=TwoWay}" IsEnabled="{Binding IsManualProxy}"
+                             Grid.Row="1" Grid.Column="1"
+                             Margin="5"
+                             TextWrapping="NoWrap" 
+                             AcceptsReturn="False"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                    <TextBox Style="{StaticResource GlassTextBox}" Name="TxtProxyPort" Text="{Binding ProxyPort, Mode=TwoWay}" IsEnabled="{Binding IsManualProxy}"
+                             Grid.Row="2" Grid.Column="1"
+                             Margin="5"
+                             TextWrapping="NoWrap" 
+                             AcceptsReturn="False"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                    <TextBox Style="{StaticResource GlassTextBox}" Name="TxtProxyUser" Text="{Binding ProxyUser, Mode=TwoWay}" IsEnabled="{Binding IsManualProxy}"
+                             Grid.Row="3" Grid.Column="1"
+                             Margin="5"
+                             TextWrapping="NoWrap" 
+                             AcceptsReturn="False"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"/>
+                    <PasswordBox Name="TxtProxyPassword" IsEnabled="{Binding IsManualProxy}" PasswordChanged="TxtProxyPassword_PasswordChanged"
+                             Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}"
+                             BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1"
+                             Grid.Row="4" Grid.Column="1"
+                             Margin="5"
+                             VerticalAlignment="Stretch" 
+                             VerticalContentAlignment="Center"/>
+                    <StackPanel Grid.Column="0" Grid.Row="5" Margin="5" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" >
+                        <Button Name="BtnSystemProxy" Margin="0,10,0,0" Padding="5"  
+                                Content="{StaticResource ND_SYSTEM_PROXY}"
+                                Command="{Binding OpenSystemProxySettingsCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

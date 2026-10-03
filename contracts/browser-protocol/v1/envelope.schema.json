@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adm.local/schema/browser-protocol/v1/envelope.schema.json",
+  "title": "ADM Browser Protocol v1 Envelope",
+  "type": "object",
+  "required": ["protocolVersion", "messageId", "sessionId", "type", "sentAtUtc", "replyTo", "payload"],
+  "properties": {
+    "protocolVersion": { "const": 1 },
+    "messageId": { "type": "string", "format": "uuid" },
+    "sessionId": { "type": ["string", "null"], "format": "uuid" },
+    "type": { "type": "string", "minLength": 1 },
+    "sentAtUtc": { "type": "string", "format": "date-time" },
+    "replyTo": { "type": ["string", "null"], "format": "uuid" },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": true
+}

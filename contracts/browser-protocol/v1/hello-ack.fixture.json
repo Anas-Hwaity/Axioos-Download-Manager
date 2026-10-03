@@ -1,0 +1,13 @@
+{
+  "protocolVersion": 1,
+  "messageId": "22222222-2222-4222-8222-222222222222",
+  "sessionId": "33333333-3333-4333-8333-333333333333",
+  "type": "HelloAck",
+  "sentAtUtc": "2026-09-20T00:00:00.100Z",
+  "replyTo": "11111111-1111-4111-8111-111111111111",
+  "payload": {
+    "selectedProtocolVersion": 1,
+    "appVersion": "0.0.0-fixture",
+    "capabilities": []
+  }
+}

@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <TargetFramework Condition="'$(AdmPhase5ModernizationEnabled)' != 'true'">$(AdmLegacyTargetFramework)</TargetFramework>
+    <TargetFramework Condition="'$(AdmPhase5ModernizationEnabled)' == 'true'">$(AdmModernTargetFramework)</TargetFramework>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <Platforms>x86;x64</Platforms>
+    <PlatformTarget>$(AdmPhase6PlatformTarget)</PlatformTarget>
+    <AssemblyName>adm-messaging-host</AssemblyName>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net4.7.2' or '$(TargetFramework)' == 'net4.5' ">
+    <AppConfig>App.PostDotNet4.config</AppConfig>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net3.5' ">
+    <AppConfig>App.PreDotNet4.config</AppConfig>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <Import Project="..\ADM.Messaging\ADM.Messaging.projitems" Label="Shared" />
+
+</Project>

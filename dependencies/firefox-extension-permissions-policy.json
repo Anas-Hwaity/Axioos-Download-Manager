@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "manifestVersion": 2,
+  "permissions": [
+    "tabs",
+    "cookies",
+    "contextMenus",
+    "menus",
+    "activeTab",
+    "webRequest",
+    "webRequestBlocking",
+    "*://*/*"
+  ],
+  "geckoId": "adm-browser-helper@axioos.app",
+  "rationale": {
+    "tabs": "Used to associate detected media and navigation metadata with the active Firefox tab.",
+    "cookies": "Used when the user explicitly sends a selected download with the browser session required by that URL.",
+    "contextMenus/menus": "Legacy Firefox action surface; both permissions are currently declared and any reduction requires authoritative AMO compatibility review.",
+    "activeTab": "Legacy manifest declaration retained pending authoritative AMO compatibility review; broad tabs and host access already exist.",
+    "webRequest/webRequestBlocking": "Required by the legacy Firefox media detector and browser-download interception path.",
+    "*://*/*": "Required by the legacy detector to observe HTTP(S) download and media responses across sites."
+  }
+}

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?define ProductVersion = "$(env.BUILD_VER)"?>
+<?define ProductUpgradeCode="3E462F34-3D19-4247-AD64-1B74703555D6"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"  xmlns:ui="http://schemas.microsoft.com/wix/UIExtension">
+  <Product Id="*" Name="Axioos Download Manager" Codepage="utf-32" Language="1033" Version="$(var.ProductVersion)" Manufacturer="Anas Al Hwaity" UpgradeCode="$(var.ProductUpgradeCode)">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <Upgrade Id="$(var.ProductUpgradeCode)">
+      <UpgradeVersion Minimum="$(var.ProductVersion)" OnlyDetect="yes" Property="NEWERVERSIONDETECTED"></UpgradeVersion>
+      <UpgradeVersion Minimum="0.0.0" Maximum="$(var.ProductVersion)" IncludeMinimum="yes" IncludeMaximum="no" Property="OLDERVERSIONBEINGUPGRADED"></UpgradeVersion>
+    </Upgrade>
+
+    <Condition Message="A newer or same version of this software is already istalled">
+      NOT NEWERVERSIONDETECTED
+    </Condition>
+	
+	<Condition Message="This setup requires Windows 10 or later.">
+		<![CDATA[Installed OR (VersionNT > 602)]]>
+	</Condition>
+	
+	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open Axioos Download Manager" />
+	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
+	
+	<WixVariable Id="WixUILicenseRtf" Value="gpl-2.0.rtf" />
+	<Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+	
+	<UI>
+        <UIRef Id="WixUI_InstallDir" />
+        <Publish Dialog="ExitDialog" 
+            Control="Finish" 
+            Event="DoAction" 
+            Value="LaunchADM">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+	
+    <InstallExecuteSequence>
+      <RemoveExistingProducts After="InstallValidate" />
+    </InstallExecuteSequence>
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high"  />
+	
+	<Feature Id="ProductFeature" Title="ADM" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+	  <ComponentGroupRef Id="NET4" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="ProgramShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+    <CustomAction Id="LaunchADM"  Directory="INSTALLFOLDER" ExeCommand='"[INSTALLFOLDER]adm-app.exe" --first-run'  Return="asyncNoWait" Impersonate="yes"/>
+
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="ADM">
+        </Directory>
+      </Directory>
+      <Directory Id="DesktopFolder"/>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ProgramMenuSubFolder" Name="Axioos Download Manager"></Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+	  <Component Id="RegistryEntries" Guid="*">
+        <RegistryKey Root="HKCU"
+                     Key="Software\Microsoft\Windows\CurrentVersion\Run">
+            <RegistryValue Type="string" Name="ADM" Value='"[INSTALLFOLDER]adm-app.exe" --background'/>
+        </RegistryKey>
+		<RegistryKey Root="HKCR"
+                     Key="adm-app">
+            <RegistryValue Type="string" Value='URL:Axioos Download Manager'/>
+			<RegistryValue Type="string" Name='URL Protocol' Value='' />
+        </RegistryKey>
+		<RegistryKey Root="HKCR"
+                     Key="adm-app\shell\open\command">
+            <RegistryValue Type="string" Value='"[INSTALLFOLDER]adm-app.exe" "%1"'/>
+        </RegistryKey>
+    </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <Icon Id="AppIcon" SourceFile="icon.ico"/>
+    <DirectoryRef Id="ProgramMenuSubFolder">
+      <Component Id="StartMenuShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab43168cef">
+        <Shortcut Id="AppStartMenuShortcut" Name="Axioos Download Manager" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]adm-app.exe'  Advertise="no"></Shortcut>
+        <RegistryValue Root="HKCU" Key="Software\Axioos Download Manager" Name="Installed1" Type="integer" Value="1" KeyPath="yes"/>
+        <RemoveFolder Id="ProgramMenuSubFolder" On="uninstall"/>
+      </Component>
+    </DirectoryRef>
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="ProgramShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab53168cef">
+        <Shortcut Id="AppShortcut" Name="Axioos Download Manager" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]adm-app.exe'  Advertise="no"></Shortcut>
+        <RegistryValue Root="HKLM" Key="Software\Axioos Download Manager" Name="Installed2" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab53268cef">
+        <Shortcut Id="AppDesktopShortcut"  Name="Axioos Download Manager" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]adm-app.exe'  Advertise="no"></Shortcut>
+        <RegistryValue Root="HKCU" Key="Software\Axioos Download Manager" Name="Installed3" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+
+</Wix>

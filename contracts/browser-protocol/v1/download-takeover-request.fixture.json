@@ -1,0 +1,20 @@
+{
+  "protocolVersion": 1,
+  "messageId": "55555555-5555-4555-8555-555555555555",
+  "sessionId": "33333333-3333-4333-8333-333333333333",
+  "type": "DownloadTakeoverRequest",
+  "sentAtUtc": "2026-09-20T00:00:01.000Z",
+  "replyTo": null,
+  "payload": {
+    "browserDownloadId": 42,
+    "browserDownloadIdentity": "edge:fixture-session:42",
+    "url": "https://example.test/file.zip",
+    "finalUrl": "https://cdn.example.test/file.zip",
+    "filename": "file.zip",
+    "referrer": "https://example.test/",
+    "mime": "application/zip",
+    "totalSize": 1048576,
+    "incognito": false,
+    "pageSessionId": null
+  }
+}

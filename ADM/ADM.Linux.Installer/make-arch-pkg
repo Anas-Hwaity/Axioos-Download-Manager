@@ -1,0 +1,75 @@
+#!/bin/bash
+
+
+VERSION=8.0.25
+SRC_DIR=binary-source
+SOURCE_NAME="src"
+
+rm -rf "${SOURCE_NAME}"
+rm -rf pkg
+rm -rf src
+rm -f "${SOURCE_NAME}*pkg.tar.*"
+rm -f PKGBUILD
+
+mkdir "${SOURCE_NAME}"
+mkdir -p "${SOURCE_NAME}/opt/adman"
+mkdir -p "${SOURCE_NAME}/usr/bin"
+mkdir -p "${SOURCE_NAME}/usr/share/applications"
+
+cp -r "${SRC_DIR}/." "${SOURCE_NAME}/opt/adman"
+
+find "${SOURCE_NAME}/" -type d -print0 | xargs -0 chmod 0755
+find "${SOURCE_NAME}/" -type f -print0 | xargs -0 chmod 0644
+
+touch "${SOURCE_NAME}/opt/adman/adm-app.desktop"
+touch "${SOURCE_NAME}/usr/bin/adman"
+
+cat <<EOF > "${SOURCE_NAME}/opt/adman/adm-app.desktop"
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Exec=env GTK_USE_PORTAL=1 /opt/adman/adm-app %U
+Type=Application
+Terminal=false
+Name=Axioos Download Manager
+Comment=Axioos Download Manager
+Categories=Network;
+Icon=/opt/adman/adm-logo.svg
+MimeType=application/adm-app;x-scheme-handler/adm-app;
+StartupNotify=true
+EOF
+
+cat <<EOF > "${SOURCE_NAME}/usr/bin/adman"
+#!/bin/bash
+export GTK_USE_PORTAL=1 
+/opt/adman/adm-app \$@
+EOF
+
+cat <<EOF > "${SOURCE_NAME}/opt/adman/source_pkg.txt"
+adman_gtk|.pkg.tar.zst;.pkg.tar.xz;.pkg.tar.gz;.pkg.tar.bz2
+EOF
+
+cp "${SOURCE_NAME}/opt/adman/adm-app.desktop" "${SOURCE_NAME}/usr/share/applications"
+
+chmod 755 "${SOURCE_NAME}/usr/bin/adman"
+chmod 755 "${SOURCE_NAME}/opt/adman/adm-app"
+
+
+cat <<EOF > "PKGBUILD"
+pkgname=adman_gtk
+pkgver=${VERSION}
+pkgrel=1
+pkgdesc="Open source download accelerator and video downloader."
+arch=("x86_64")
+url="https://github.com/Anas-Hwaity/Axioos-Download-Manager"
+license=('GPLv3')
+depends=('ffmpeg' 'gtk3>=3.22.0')
+
+package() {
+	cp -r * \$pkgdir
+}
+EOF
+
+cat PKGBUILD
+
+makepkg -d -f

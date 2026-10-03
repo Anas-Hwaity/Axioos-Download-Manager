@@ -1,0 +1,88 @@
+<UserControl x:Class="ADM.Wpf.UI.Dialogs.Settings.RulesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="Transparent" Margin="4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Download rules" FontSize="18" FontWeight="SemiBold" Margin="8,4,8,10"/>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Background="{DynamicResource GlassTableSurfaceBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="8">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                        <Button Content="Add" Click="Add_Click" Style="{StaticResource GlassToolbarActionButton}" Margin="3"/>
+                        <Button Content="Delete" Click="Delete_Click" Style="{StaticResource GlassToolbarActionButton}" Margin="3"/>
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding Rules}" SelectedItem="{Binding SelectedRule, Mode=TwoWay}" DisplayMemberPath="Name" Background="Transparent" BorderThickness="0"/>
+                </DockPanel>
+            </Border>
+            <Border Grid.Column="2" Background="{DynamicResource GlassPanelSurfaceBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Selected rule" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <TextBlock Text="Name"/><TextBox Text="{Binding SelectedRule.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Margin="0,3,0,8"/>
+                        <CheckBox Content="Enabled" IsChecked="{Binding SelectedRule.Enabled, Mode=TwoWay}" Margin="0,3,0,6"/>
+                        <TextBlock Text="Priority"/><TextBox Text="{Binding SelectedRule.Priority, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Margin="0,3,0,8"/>
+                        <CheckBox Content="Stop processing after this rule" IsChecked="{Binding SelectedRule.StopProcessing, Mode=TwoWay}" Margin="0,3,0,10"/>
+                        <TextBlock Text="Conditions" FontWeight="SemiBold" Margin="0,4,0,5"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,5,0,0">
+                                    <Button Content="+" Click="AddCondition_Click" Style="{StaticResource GlassToolbarActionButton}" Padding="8,2"/>
+                                    <Button Content="−" Click="DeleteCondition_Click" Style="{StaticResource GlassToolbarActionButton}" Padding="8,2"/>
+                                </StackPanel>
+                                <ListBox ItemsSource="{Binding SelectedConditions}" SelectedItem="{Binding SelectedCondition, Mode=TwoWay}" DisplayMemberPath="Kind" MinHeight="70"/>
+                            </DockPanel>
+                            <StackPanel Grid.Column="2">
+                                <ComboBox ItemsSource="{Binding ConditionKinds}" SelectedItem="{Binding SelectedCondition.Kind, Mode=TwoWay}" Style="{StaticResource GlassComboBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SelectedCondition.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" ToolTip="Condition value" Margin="0,0,0,4"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="6"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding SelectedCondition.Minimum, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" ToolTip="Minimum size in bytes (SizeRange)"/>
+                                    <TextBox Grid.Column="2" Text="{Binding SelectedCondition.Maximum, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" ToolTip="Maximum size in bytes (SizeRange)"/>
+                                </Grid>
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="6"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding SelectedCondition.StartTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" ToolTip="Start time, e.g. 08:00 (TimeWindow)"/>
+                                    <TextBox Grid.Column="2" Text="{Binding SelectedCondition.EndTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" ToolTip="End time, e.g. 17:00 (TimeWindow)"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="Actions" FontWeight="SemiBold" Margin="0,10,0,5"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="8"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,5,0,0">
+                                    <Button Content="+" Click="AddAction_Click" Style="{StaticResource GlassToolbarActionButton}" Padding="8,2"/>
+                                    <Button Content="−" Click="DeleteAction_Click" Style="{StaticResource GlassToolbarActionButton}" Padding="8,2"/>
+                                </StackPanel>
+                                <ListBox ItemsSource="{Binding SelectedActions}" SelectedItem="{Binding SelectedAction, Mode=TwoWay}" DisplayMemberPath="Kind" MinHeight="70"/>
+                            </DockPanel>
+                            <StackPanel Grid.Column="2">
+                                <ComboBox ItemsSource="{Binding ActionKinds}" SelectedItem="{Binding SelectedAction.Kind, Mode=TwoWay}" Style="{StaticResource GlassComboBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SelectedAction.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" ToolTip="Action value" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SelectedAction.NumericValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" ToolTip="Numeric value for speed/max connections"/>
+                            </StackPanel>
+                        </Grid>
+                        <Separator Margin="0,10,0,0"/>
+                        <TextBlock Text="Preview / test" FontWeight="SemiBold" Margin="0,10,0,6"/>
+                        <TextBlock Text="URL"/><TextBox Text="{Binding PreviewUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Margin="0,3,0,6"/>
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                            <StackPanel><TextBlock Text="MIME"/><TextBox Text="{Binding PreviewMimeType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Margin="0,3,0,6"/></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="Extension"/><TextBox Text="{Binding PreviewFileExtension, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Margin="0,3,0,6"/></StackPanel>
+                        </Grid>
+                        <TextBlock Text="Download type"/><TextBox Text="{Binding PreviewDownloadType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource GlassTextBox}" Foreground="{DynamicResource GlassTextBrush}" Background="{DynamicResource GlassInputBrush}" BorderBrush="{DynamicResource GlassBorderBrush}" BorderThickness="1" Margin="0,3,0,8"/>
+                        <Button Content="Preview rules" Click="Preview_Click" Style="{StaticResource GlassToolbarActionButton}" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding PreviewResult}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        <TextBlock Text="{Binding PersistenceError}" TextWrapping="Wrap" Margin="0,5,0,0" Foreground="{DynamicResource GlassDangerBrush}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+        <TextBlock Grid.Row="2" Text="Rule evaluation and preview use the same production engine and persisted rule set." Opacity="0.7" Margin="8,8,8,0" TextWrapping="Wrap"/>
+    </Grid>
+</UserControl>

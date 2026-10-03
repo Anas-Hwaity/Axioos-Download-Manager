@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <AdmPhase5ModernizationEnabled Condition="'$(AdmPhase5ModernizationEnabled)' == ''">false</AdmPhase5ModernizationEnabled>
+    <AdmLegacyTargetFramework>net4.7.2</AdmLegacyTargetFramework>
+    <AdmModernTargetFramework>net10.0-windows</AdmModernTargetFramework>
+    <AdmModernTestTargetFramework>net10.0</AdmModernTestTargetFramework>
+    <AdmPhase6X64Enabled Condition="'$(AdmPhase6X64Enabled)' == ''">false</AdmPhase6X64Enabled>
+    <AdmPhase6PlatformTarget Condition="'$(AdmPhase6X64Enabled)' != 'true'">x86</AdmPhase6PlatformTarget>
+    <AdmPhase6PlatformTarget Condition="'$(AdmPhase6X64Enabled)' == 'true'">x64</AdmPhase6PlatformTarget>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+</Project>

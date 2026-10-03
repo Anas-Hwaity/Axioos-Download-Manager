@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adm.local/schema/browser-protocol/v1/hello-ack.schema.json",
+  "title": "ADM Browser Protocol v1 HelloAck",
+  "allOf": [
+    { "$ref": "envelope.schema.json" },
+    {
+      "properties": {
+        "type": { "const": "HelloAck" },
+        "payload": {
+          "type": "object",
+          "required": ["selectedProtocolVersion", "appVersion", "capabilities"],
+          "properties": {
+            "selectedProtocolVersion": { "const": 1 },
+            "appVersion": { "type": "string" },
+            "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+          },
+          "additionalProperties": true
+        }
+      }
+    }
+  ]
+}

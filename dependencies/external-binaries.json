@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "dependencies": [
+    {
+      "id": "yt-dlp",
+      "state": "pinned",
+      "version": "2026.08.19",
+      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_x86.exe",
+      "sha256": "a8f91bd41452506bc81ebd2f369b186fea0ee7075413ba00cef9fd346a0a5d0c",
+      "license": "Unlicense",
+      "notes": "Pinned Windows x86 release asset. The digest matches the publisher's SHA2-256SUMS file for release 2026.08.19."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adm.local/schema/browser-protocol/v1/hello.schema.json",
+  "title": "ADM Browser Protocol v1 Hello",
+  "allOf": [
+    { "$ref": "envelope.schema.json" },
+    {
+      "properties": {
+        "sessionId": { "type": "null" },
+        "type": { "const": "Hello" },
+        "payload": {
+          "type": "object",
+          "required": ["supportedProtocolVersions", "extensionVersion", "browserFamily", "capabilities"],
+          "properties": {
+            "supportedProtocolVersions": { "type": "array", "contains": { "const": 1 }, "uniqueItems": true },
+            "extensionVersion": { "type": "string" },
+            "browserFamily": { "type": "string" },
+            "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+          },
+          "additionalProperties": true
+        }
+      }
+    }
+  ]
+}
