@@ -150,6 +150,19 @@ def trim_other_architectures():
     return saved
 
 
+def repair_old_timestamps(folder):
+    floor = 315619200
+    repaired = 0
+    for path in Path(folder).rglob("*"):
+        try:
+            if path.is_file() and path.stat().st_mtime < floor:
+                os.utime(path, None)
+                repaired += 1
+        except OSError:
+            continue
+    return repaired
+
+
 def build_app():
     if OUTPUT.exists():
         try:
@@ -172,6 +185,9 @@ def build_app():
     missing = [name for name in REQUIRED_FILES if not (STAGE / name).is_file()]
     if missing:
         raise RuntimeError("The release build is missing: " + ", ".join(missing))
+    repaired = repair_old_timestamps(STAGE)
+    if repaired:
+        say(f"DATES: {repaired} files carried a date before 1980 and now carry today's date, which archives and installers require")
     saved = trim_other_architectures()
     if saved:
         say(f"TRIM: {saved / 1048576:.1f} MB of unused native libraries left out")
@@ -194,7 +210,7 @@ def bundle_ffmpeg():
 
 def build_portable():
     target = OUTPUT / PORTABLE_NAME
-    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED, compresslevel=9, strict_timestamps=False) as archive:
         for path in sorted(STAGE.rglob("*")):
             if path.is_file():
                 archive.write(path, Path("Axioos") / path.relative_to(STAGE))
@@ -344,7 +360,7 @@ def main():
         ffmpeg = bundle_ffmpeg()
         outputs = [build_portable()]
         msi = build_msi()
-    except (subprocess.CalledProcessError, RuntimeError, OSError) as error:
+    except (subprocess.CalledProcessError, RuntimeError, OSError, ValueError) as error:
         say("RELEASE BUILD FAILED: " + str(error))
         return 1
     setup = None

@@ -17,6 +17,9 @@
 		<![CDATA[Installed OR (VersionNT > 602)]]>
 	</Condition>
 	
+	<Property Id="ARPPRODUCTICON" Value="AppIcon" />
+	<Property Id="ARPURLINFOABOUT" Value="https://github.com/Anas-Hwaity/Axioos-Download-Manager" />
+	<Property Id="ARPHELPLINK" Value="https://github.com/Anas-Hwaity/Axioos-Download-Manager/issues" />
 	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open $(var.ProductDisplayName)" />
 	<Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
 	
