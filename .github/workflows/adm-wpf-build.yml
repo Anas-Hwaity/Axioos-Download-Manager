@@ -16,6 +16,6 @@ jobs:
       with:
         global-json-file: global.json
     - name: Restore dependencies
-      run: dotnet restore ADM/ADM.Wpf.UI/ADM.Wpf.UI.csproj --locked-mode -p:Platform=x86
+      run: dotnet restore ADM/ADM.Wpf.UI/ADM.Wpf.UI.csproj -p:Platform=x86
     - name: Build
       run: dotnet build ADM/ADM.Wpf.UI/ADM.Wpf.UI.csproj --no-restore -c Release -f net4.7.2 -p:Platform=x86 -p:UseSharedCompilation=false
