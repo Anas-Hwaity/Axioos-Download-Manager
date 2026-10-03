@@ -859,6 +859,7 @@
         if (!message || typeof message !== "object") return;
         if (message.type === "state") {
             const previous = new Map(model.items.map(item => [item.id, item.status]));
+            const previousKind = new Map(model.items.map(item => [item.id, item.kind]));
             Object.assign(model, message.state || {});
             if (Array.isArray(model.items)) {
                 for (const item of model.items) {
@@ -872,8 +873,14 @@
                 }
             }
             for (const id of [...ui.sel]) if (!model.items.some(item => item.id === id)) ui.sel.delete(id);
+            const moved = [...ui.sel].filter(id => {
+                const item = model.items.find(entry => entry.id === id);
+                return item && previousKind.has(id) && previousKind.get(id) !== item.kind;
+            });
+            if (moved.length && ui.sel.size > moved.length) for (const id of moved) ui.sel.delete(id);
             recordHistory();
-            render();
+            if (moved.length) syncSelection();
+            else render();
         } else if (message.type === "appearance") {
             appearance = message.desktop ? catalog.fromDesktop(message.state || appearance, message.desktop) : catalog.normalize(message.state);
             render(true);

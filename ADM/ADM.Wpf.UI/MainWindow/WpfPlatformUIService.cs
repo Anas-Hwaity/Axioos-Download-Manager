@@ -12,6 +12,7 @@ using ADM.Core.Legacy;
 using ADM.Core.Navigation;
 using ADM.Core.UI;
 using ADM.Core.Util;
+using ADM.Wpf.UI.Common.Helpers;
 using ADM.Wpf.UI.Diagnostics;
 using ADM.Wpf.UI.Dialogs.BatchDownload;
 using ADM.Wpf.UI.Dialogs.ChromeIntegrator;
@@ -95,7 +96,8 @@ namespace ADM.Wpf.UI
             {
                 fc.Filter = filter;
             }
-            var ret = fc.ShowDialog(GetMainWindow());
+            var owner = WindowOwner.Usable(GetMainWindow());
+            var ret = owner == null ? fc.ShowDialog() : fc.ShowDialog(owner);
             if (ret.HasValue && ret.Value)
             {
                 return fc.FileName;
@@ -118,7 +120,8 @@ namespace ADM.Wpf.UI
             {
                 fc.Filter = filter;
             }
-            var ret = fc.ShowDialog(GetMainWindow());
+            var owner = WindowOwner.Usable(GetMainWindow());
+            var ret = owner == null ? fc.ShowDialog() : fc.ShowDialog(owner);
             if (ret.HasValue && ret.Value)
             {
                 return fc.FileName;
@@ -150,21 +153,21 @@ namespace ADM.Wpf.UI
                 Referer = ent.RefererUrl,
                 Cookies = cookies,
                 Headers = headers,
-                Owner = GetMainWindow()
+                Owner = WindowOwner.Usable(GetMainWindow())
             };
             propertiesWindow.ShowDialog(GetMainWindow());
         }
 
         public void ShowYoutubeDLDialog()
         {
-            var ydlWindow = new VideoDownloaderWindow(downloadCreationPreferences, externalNavigationService) { Owner = GetMainWindow() };
+            var ydlWindow = new VideoDownloaderWindow(downloadCreationPreferences, externalNavigationService) { Owner = WindowOwner.Usable(GetMainWindow()) };
             var win = new VideoDownloaderUIController(ydlWindow, application, core, downloadCreationPreferences);
             win.Run();
         }
 
         public void ShowBatchDownloadWindow()
         {
-            var uvc = new BatchDownloadUIController(new BatchDownloadWindow { Owner = GetMainWindow() }, application);
+            var uvc = new BatchDownloadUIController(new BatchDownloadWindow { Owner = WindowOwner.Usable(GetMainWindow()) }, application);
             uvc.Run();
         }
 
@@ -185,7 +188,7 @@ namespace ADM.Wpf.UI
         public AuthenticationInfo? PromtForCredentials(object window, string message)
         {
             var wnd = (Window)window;
-            var dlg = new CredentialsPromptDialog { PromptText = message ?? "Authentication required", Owner = wnd };
+            var dlg = new CredentialsPromptDialog { PromptText = message ?? "Authentication required", Owner = WindowOwner.Usable(wnd) };
             var ret = dlg.ShowDialog(wnd);
             if (ret.HasValue && ret.Value)
             {
@@ -222,15 +225,12 @@ namespace ADM.Wpf.UI
 
         public IQueuesWindow CreateQueuesAndSchedulerWindow()
         {
-            return new ManageQueueDialog(application)
-            {
-                Owner = GetMainWindow()
-            };
+            return new ManageQueueDialog(application);
         }
 
         public IQueueSelectionDialog CreateQueueSelectionDialog()
         {
-            return new QueueSelectionWindow() { Owner = GetMainWindow() };
+            return new QueueSelectionWindow() { Owner = WindowOwner.Usable(GetMainWindow()) };
         }
 
         public IDownloadCompleteDialog CreateDownloadCompleteDialog()

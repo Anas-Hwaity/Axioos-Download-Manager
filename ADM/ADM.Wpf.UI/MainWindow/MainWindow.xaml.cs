@@ -17,6 +17,7 @@ using TraceLog;
 using Translations;
 using ADM.Core.UI;
 using ADM.Wpf.UI.Diagnostics;
+using ADM.Wpf.UI.Common.Helpers;
 using ADM.Core;
 using ADM.Core.Downloader;
 using ADM.Core.Navigation;
@@ -317,7 +318,7 @@ namespace ADM.Wpf.UI
 
         public void ConfirmDelete(string text, out bool approved, out bool deleteFiles)
         {
-            DeleteConfirmDialog dc = new() { DescriptionText = text, Owner = this };
+            DeleteConfirmDialog dc = new() { DescriptionText = text, Owner = WindowOwner.Usable(this) };
             approved = false;
             deleteFiles = false;
             bool? ret = dc.ShowDialog(this);
@@ -350,11 +351,6 @@ namespace ADM.Wpf.UI
 
         public void DeleteAllFinishedDownloads()
         {
-            if (MessageBox.Show(this, TextResource.GetText("MENU_DELETE_COMPLETED"), ProductIdentity.ShortName, MessageBoxButton.YesNo)
-                != MessageBoxResult.Yes)
-            {
-                return;
-            }
             finishedList.Clear();
         }
 
@@ -574,7 +570,7 @@ namespace ADM.Wpf.UI
         {
             var win = new AboutWindow(externalNavigationService)
             {
-                Owner = this
+                Owner = WindowOwner.Usable(this)
             };
             win.ShowDialog(this);
         }

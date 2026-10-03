@@ -11,6 +11,7 @@ import DownloadTakeoverTransaction, { browserDownloadIdentity } from './download
 import { buildDownloadTakeoverPayload } from './download-takeover-request.js';
 
 const DESKTOP_FAILURE_VISIBILITY_MS = 5000;
+const USER_DISABLED_KEY = "adm.monitoring.userDisabled.v1";
 const LOCAL_MEDIA_EXTENSIONS = Object.freeze([
     "MP4", "M3U8", "WEBM", "MPD", "MOV", "MPEG", "MPG", "MKV", "FLV", "OGG", "OPUS", "MP3", "AAC", "M4A"
 ]);
@@ -44,6 +45,8 @@ export default class App {
         });
         this.tabsWatcher = [];
         this.userDisabled = false;
+        this.switchTouched = false;
+        this.switchRestored = null;
         this.appEnabled = false;
         this.onDownloadCreatedCallback = this.onDownloadCreated.bind(this);
         this.onDeterminingFilenameCallback = this.onDeterminingFilename.bind(this);
@@ -59,12 +62,23 @@ export default class App {
 
     start() {
         this.logger.log("starting...");
+        this.switchRestored = this.restoreMonitoringSwitch();
         this.ready = this.initialize();
         this.register();
         return this.ready;
     }
 
+    async restoreMonitoringSwitch() {
+        try {
+            const stored = await chrome.storage?.local?.get?.(USER_DISABLED_KEY);
+            if (!this.switchTouched) this.userDisabled = stored?.[USER_DISABLED_KEY] === true;
+        } catch {
+            this.logger.log("monitoring switch restore failed");
+        }
+    }
+
     async initialize() {
+        await this.switchRestored;
         try {
             await this.pageSessions.restore();
         } catch {
@@ -321,6 +335,10 @@ export default class App {
 
     onDeterminingFilename(download, suggest) {
         this.logger.log("onDeterminingFilename");
+        void Promise.resolve(this.switchRestored).then(() => this.considerTakeover(download));
+    }
+
+    considerTakeover(download) {
         if (this.userDisabled) return;
         const url = download.finalUrl || download.url;
         const handOffIfEligible = () => {
@@ -691,7 +709,8 @@ export default class App {
                 this.onTabActivated({ tabId: request.tabId });
             }
             let resp = {
-                enabled: this.isMonitoringEnabled() || this.browserMediaForTab(this.activeTabId).length > 0,
+                enabled: this.userDisabled === false &&
+                    (this.isMonitoringEnabled() || this.browserMediaForTab(this.activeTabId).length > 0),
                 list: this.popupMediaList(),
                 appearance: this.appearance
             };
@@ -741,7 +760,13 @@ export default class App {
             return true;
         }
         else if (request.type === "cmd") {
+            this.switchTouched = true;
             this.userDisabled = request.enabled === false;
+            try {
+                void Promise.resolve(chrome.storage?.local?.set?.({ [USER_DISABLED_KEY]: this.userDisabled })).catch(() => { });
+            } catch {
+                this.logger.log("monitoring switch save failed");
+            }
             this.logger.log("request.enabled:" + request.enabled);
             if (request.enabled && !this.connector.isConnected()) {
                 this.connector.launchApp();

@@ -1,6 +1,7 @@
 "use strict";
 
 const STORAGE_KEY = "adm.takeover.paused.v1";
+const MAX_RECORD_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function callStorageGet(storage, key) {
   return new Promise((resolve, reject) => {
@@ -52,6 +53,29 @@ function eraseDownload(downloads, id) {
       downloads.erase({ id }, () => resolve(!globalThis.chrome?.runtime?.lastError));
     } catch { resolve(false); }
   });
+}
+
+function downloadIsGone(downloads, id) {
+  return new Promise(resolve => {
+    if (typeof downloads?.search !== "function") {
+      resolve(false);
+      return;
+    }
+    try {
+      downloads.search({ id }, items => {
+        if (globalThis.chrome?.runtime?.lastError) {
+          resolve(false);
+          return;
+        }
+        resolve(Array.isArray(items) && items.length === 0);
+      });
+    } catch { resolve(false); }
+  });
+}
+
+function isStale(record, now) {
+  const stamp = Date.parse(record?.acceptedAtUtc || record?.pausedAtUtc || "");
+  return Number.isFinite(stamp) && now - stamp > MAX_RECORD_AGE_MS;
 }
 
 export default class TakeoverOrphanStore {
@@ -129,10 +153,15 @@ export default class TakeoverOrphanStore {
     let resumed = 0;
     let cancelled = 0;
     let changed = false;
+    const now = Date.now();
     const awaiting = [];
     for (const [key, record] of Object.entries(records)) {
       const id = Number(record?.browserDownloadId);
-      if (!Number.isInteger(id) || id < 0) continue;
+      if (!Number.isInteger(id) || id < 0) {
+        delete records[key];
+        changed = true;
+        continue;
+      }
       let waiting = false;
       if (record?.durableAccepted !== true && queryOwnership) {
         try {
@@ -160,12 +189,18 @@ export default class TakeoverOrphanStore {
           delete records[key];
           cancelled += 1;
           changed = true;
+        } else if (isStale(record, now) || await downloadIsGone(this.downloads, id)) {
+          delete records[key];
+          changed = true;
         }
         continue;
       }
       if (await resumeDownload(this.downloads, id)) {
         delete records[key];
         resumed += 1;
+        changed = true;
+      } else if (isStale(record, now) || await downloadIsGone(this.downloads, id)) {
+        delete records[key];
         changed = true;
       }
     }

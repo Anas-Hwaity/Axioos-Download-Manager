@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 
@@ -154,7 +155,7 @@ namespace Axioos.Setup
                 if (!string.IsNullOrEmpty(customFolder)) arguments.Append(" INSTALLFOLDER=\"" + customFolder.TrimEnd('\\') + "\"");
                 foreach (string extra in passThrough) arguments.Append(' ').Append(Quote(extra));
                 var start = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "msiexec.exe"), arguments.ToString());
-                if (mode == SetupMode.Branded)
+                if (mode == SetupMode.Branded || (mode == SetupMode.Quiet && !IsAdministrator()))
                 {
                     start.UseShellExecute = true;
                     start.Verb = "runas";
@@ -186,6 +187,21 @@ namespace Axioos.Setup
             finally
             {
                 TryDelete(folder);
+            }
+        }
+
+        private static bool IsAdministrator()
+        {
+            try
+            {
+                using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+                {
+                    return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
+                }
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 

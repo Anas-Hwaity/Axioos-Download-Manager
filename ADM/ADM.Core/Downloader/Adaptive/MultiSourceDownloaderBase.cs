@@ -66,11 +66,46 @@ namespace ADM.Core.Downloader.Adaptive
         protected long lastDownloaded = 0;
         protected long ticksAtDownloadStartOrResume = 0L;
         private bool stopRequested = false;
+        private bool assembled;
+        private string? partialOutput;
         private int? configuredMaxConnections;
+
+        private AuthenticationInfo? resumeAuthentication;
+
+        public void UseCredentials(AuthenticationInfo? authentication)
+        {
+            resumeAuthentication = authentication;
+        }
+
+        protected void RestoreCredentials()
+        {
+            if (_state == null || _state.Authentication != null) return;
+            if (resumeAuthentication != null)
+            {
+                _state.Authentication = resumeAuthentication;
+                return;
+            }
+            try
+            {
+                var url = PrimaryUrl;
+                if (url != null) _state.Authentication = Helpers.GetAuthenticationInfoFromConfig(url);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Saved credentials could not be looked up");
+            }
+        }
+
+        private const int TelemetryLockWaitMilliseconds = 40;
+        private volatile DownloadTransferTelemetryProjection? lastTransferTelemetry;
 
         public DownloadTransferTelemetryProjection CaptureTransferTelemetry()
         {
-            rwLock.EnterReadLock();
+            if (!rwLock.TryEnterReadLock(TelemetryLockWaitMilliseconds))
+            {
+                return lastTransferTelemetry ??
+                    new DownloadTransferTelemetryProjection(DownloadResumeCapability.Unknown, 0, Array.Empty<DownloadRangeTelemetry>());
+            }
             try
             {
                 var ranges = _chunks.Select(chunk => new DownloadRangeTelemetry(
@@ -80,7 +115,9 @@ namespace ADM.Core.Downloader.Adaptive
                     chunk.ChunkState.ToString())).ToList();
                 var active = _chunks.Count(chunk => chunk.ChunkState == ChunkState.InProgress);
                 var capability = _chunks.Count == 0 ? DownloadResumeCapability.Unknown : DownloadResumeCapability.Yes;
-                return new DownloadTransferTelemetryProjection(capability, active, ranges);
+                var projection = new DownloadTransferTelemetryProjection(capability, active, ranges);
+                lastTransferTelemetry = projection;
+                return projection;
             }
             finally { rwLock.ExitReadLock(); }
         }
@@ -208,16 +245,13 @@ namespace ADM.Core.Downloader.Adaptive
                     this._cancellationTokenSource.ThrowIfCancellationRequested();
 
                     Assemble();
+                    EnsureAssembled();
                     OnComplete();
                 }
                 catch (OperationCanceledException ex)
                 {
                     Log.Debug(ex, ex.Message);
-                    if (this._cancelRequestor.Error != ErrorCode.None)
-                    {
-                        OnFailed(new DownloadFailedEventArgs(this._cancelRequestor.Error));
-                    }
-                    OnCancelled();
+                    ReportStopped();
                 }
                 catch (FileNotFoundException ex)
                 {
@@ -274,16 +308,17 @@ namespace ADM.Core.Downloader.Adaptive
                 }
 
                 Assemble();
+                EnsureAssembled();
                 OnComplete();
             }
             catch (OperationCanceledException ex)
             {
-                Console.WriteLine(ex);
-                OnCancelled();
+                Log.Debug(ex, ex.Message);
+                ReportStopped();
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Log.Debug(ex, ex.Message);
                 if (ex.InnerException is HttpException)
                 {
                     var he = ex.InnerException as HttpException;
@@ -295,6 +330,35 @@ namespace ADM.Core.Downloader.Adaptive
                         ex is DownloadException de ? de.ErrorCode : ErrorCode.Generic));
                 }
             }
+        }
+
+        private void ReportStopped()
+        {
+            var error = this._cancelRequestor.Error;
+            if (error != ErrorCode.None && !stopRequested)
+            {
+                OnFailed(new DownloadFailedEventArgs(error));
+                return;
+            }
+            OnCancelled();
+        }
+
+        private void EnsureAssembled()
+        {
+            if (assembled) return;
+            var partial = partialOutput;
+            if (partial != null)
+            {
+                try
+                {
+                    File.Delete(partial);
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "The unfinished output file could not be removed");
+                }
+            }
+            throw new OperationCanceledException();
         }
 
         protected void OnProbe()
@@ -311,19 +375,26 @@ namespace ADM.Core.Downloader.Adaptive
             new Thread(() =>
             {
                 Log.Debug("Inside thread");
-                for (var i = startIndex; i <= endIndex; i++)
+                try
                 {
-                    if (this._cancellationTokenSource.IsCancellationRequested)
+                    for (var i = startIndex; i <= endIndex; i++)
                     {
-                        break;
+                        if (this._cancellationTokenSource.IsCancellationRequested)
+                        {
+                            break;
+                        }
+                        var chunk = _chunks[i];
+                        if (chunk.ChunkState == ChunkState.Finished)
+                        {
+                            continue;
+                        }
+                        DownloadChunk(chunk, latch);
+                        count++;
                     }
-                    var chunk = _chunks[i];
-                    if (chunk.ChunkState == ChunkState.Finished)
-                    {
-                        continue;
-                    }
-                    DownloadChunk(chunk, latch);
-                    count++;
+                }
+                finally
+                {
+                    if (this._cancellationTokenSource.IsCancellationRequested) latch.Break();
                 }
                 Log.Debug("Finished chunk-count: " + count);
             }).Start();
@@ -364,6 +435,10 @@ namespace ADM.Core.Downloader.Adaptive
 
             Log.Debug("Waiting for downloading all chunks");
             this.countdownLatch.Wait();
+            if (_cancellationTokenSource.IsCancellationRequested && !_cancelRequestor.WaitForQuiescence(5000))
+            {
+                Log.Debug("Adaptive workers did not quiesce after cancellation");
+            }
             SaveChunkState();
             _cancellationTokenSourceStateSaver.Cancel();
             Log.Debug("Countdown latch exited");
@@ -509,9 +584,11 @@ namespace ADM.Core.Downloader.Adaptive
 
             if (!_state.Demuxed)
             {
+                partialOutput = File.Exists(TargetFile) ? null : TargetFile;
                 ConcatSegments(this._chunks.Select(c => this._chunkStreamMap.GetStream(c.Id)), TargetFile);
                 if (this._cancellationTokenSource.IsCancellationRequested) return;
                 DeleteFileParts();
+                assembled = true;
                 return;
             }
 
@@ -520,7 +597,7 @@ namespace ADM.Core.Downloader.Adaptive
                 throw new AssembleFailedException(ErrorCode.Generic);
             }
 
-            mediaProcessor.ProgressChanged += (s, e) => this.AssembingProgressChanged.Invoke(this, e);
+            mediaProcessor.ProgressChanged += (s, e) => this.AssembingProgressChanged?.Invoke(this, e);
 
             var videoFile = Path.Combine(_state.TempDirectory, "1_video" + _state.VideoContainerFormat);
             var audioFile = Path.Combine(_state.TempDirectory, "2_audio" + _state.AudioContainerFormat);
@@ -531,16 +608,32 @@ namespace ADM.Core.Downloader.Adaptive
                 audioFile);
             if (this._cancellationTokenSource.IsCancellationRequested) return;
 
+            partialOutput = File.Exists(TargetFile) ? null : TargetFile;
             var res = mediaProcessor.MergeAudioVideStream(videoFile, audioFile, TargetFile,
                 this._cancellationTokenSource, out long totalSize);
             if (this._cancellationTokenSource.IsCancellationRequested) return;
             if (res != MediaProcessingResult.Success)
             {
+                var failedOutput = partialOutput;
+                if (failedOutput != null)
+                {
+                    try
+                    {
+                        File.Delete(failedOutput);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, "The failed merge output could not be removed");
+                    }
+                }
                 var name = Path.GetFileNameWithoutExtension(TargetFileName);
                 TargetFileName = name + ".mkv";
                 this.TargetFileName = FileHelper.GetUniqueFileName(this.TargetFileName, this.TargetDir);
-                if (mediaProcessor.MergeAudioVideStream(videoFile, audioFile, TargetFile,
-                this._cancellationTokenSource, out totalSize) != MediaProcessingResult.Success)
+                partialOutput = File.Exists(TargetFile) ? null : TargetFile;
+                var fallback = mediaProcessor.MergeAudioVideStream(videoFile, audioFile, TargetFile,
+                    this._cancellationTokenSource, out totalSize);
+                if (this._cancellationTokenSource.IsCancellationRequested) return;
+                if (fallback != MediaProcessingResult.Success)
                 {
                     throw new AssembleFailedException(
                         res == MediaProcessingResult.AppNotFound ? ErrorCode.FFmpegNotFound :
@@ -552,6 +645,7 @@ namespace ADM.Core.Downloader.Adaptive
             DeleteFileParts();
 
             this._state.FileSize = totalSize;
+            assembled = true;
         }
 
         private void DeleteFileParts()

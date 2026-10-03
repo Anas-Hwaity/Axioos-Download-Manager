@@ -54,10 +54,27 @@ namespace ADM.Core.Downloader.Adaptive
         protected virtual Stream PrepareOutStream()
         {
             var targetStream = new FileStream(_chunkStreamMap.GetStream(_chunk.Id),
-                FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+                FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 1);
 
             targetStream.Seek(_chunk.Downloaded, SeekOrigin.Begin);
             return targetStream;
+        }
+
+        private Stream OpenOutStream()
+        {
+            try
+            {
+                return PrepareOutStream();
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                throw new StorageFailureException(ex);
+            }
+        }
+
+        private sealed class StorageFailureException : Exception
+        {
+            public StorageFailureException(Exception inner) : base(inner.Message, inner) { }
         }
 
         public void Download()
@@ -91,8 +108,6 @@ namespace ADM.Core.Downloader.Adaptive
                         Log.Debug("Sent request");
                         _cancellationToken.ThrowIfCancellationRequested();
                         response.EnsureSuccessStatusCode();
-                        TransientFailure = false;
-                        retryCount = 0;
 
                         if (response.StatusCode != HttpStatusCode.PartialContent && (response.StatusCode != HttpStatusCode.OK && _chunk.Downloaded + _chunk.Offset > 0))
                         {
@@ -118,7 +133,7 @@ namespace ADM.Core.Downloader.Adaptive
                         var stream = response.GetResponseStream();
                         _cancellationToken.ThrowIfCancellationRequested();
                         using var sourceStream = stream;
-                        using var targetStream = PrepareOutStream();
+                        using var targetStream = OpenOutStream();
 
                         while (!_cancellationToken.IsCancellationRequested)
                         {
@@ -126,13 +141,31 @@ namespace ADM.Core.Downloader.Adaptive
                             _cancellationToken.ThrowIfCancellationRequested();
                             if (x == 0)
                             {
+                                try
+                                {
+                                    targetStream.Flush();
+                                }
+                                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                                {
+                                    throw new StorageFailureException(ex);
+                                }
+                                TransientFailure = false;
                                 _chunk.ChunkState = ChunkState.Finished;
                                 return;
                             }
 
-                            targetStream.Write(buffer, 0, x);
+                            try
+                            {
+                                targetStream.Write(buffer, 0, x);
+                            }
+                            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                            {
+                                throw new StorageFailureException(ex);
+                            }
 
                             _chunk.Downloaded += x;
+                            TransientFailure = false;
+                            retryCount = 0;
                             downloadedEventArgs.Downloaded = x;
                             ChunkDataReceived?.Invoke(this, downloadedEventArgs);
                         }
@@ -140,7 +173,7 @@ namespace ADM.Core.Downloader.Adaptive
                     catch (Exception e)
                     {
                         Log.Debug(e, "Error in DownloadAsync");
-                        if (e is DirectoryNotFoundException || e is IOException)
+                        if (e is StorageFailureException)
                         {
                             _cancelRequster.CancelWithFatal(ErrorCode.DiskError);
                             return;

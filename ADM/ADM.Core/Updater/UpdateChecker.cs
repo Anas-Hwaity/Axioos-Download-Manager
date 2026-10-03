@@ -114,6 +114,7 @@ namespace ADM.Core.Updater
                                     Url = asset.Url,
                                     Name = asset.Name,
                                     Size = asset.Size,
+                                    Digest = asset.Digest,
                                     TagName = release.Value.TagName,
                                     IsExternal = true
                                 };
@@ -223,6 +224,7 @@ namespace ADM.Core.Updater
         [JsonProperty("browser_download_url")]
         public string Url { get; set; }
         public long Size { get; set; }
+        public string? Digest { get; set; }
     }
 
     public struct UpdateInfo
@@ -230,6 +232,7 @@ namespace ADM.Core.Updater
         public string Name { get; set; }
         public string Url { get; set; }
         public long Size { get; set; }
+        public string? Digest { get; set; }
         public string TagName { get; set; }
         public bool IsExternal { get; set; }
     }

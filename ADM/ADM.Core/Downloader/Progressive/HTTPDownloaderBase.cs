@@ -113,9 +113,60 @@ namespace ADM.Core.Downloader.Progressive
             if (speedLimitKiB.HasValue && speedLimitKiB.Value > 0) GetState().SpeedLimit = speedLimitKiB.Value;
         }
 
+        protected bool assemblyCompleted;
+        protected string? assemblyOutput;
+
+        protected bool AssemblyWasInterrupted()
+        {
+            if (assemblyCompleted || !this.cancelFlag.IsCancellationRequested) return false;
+            var partial = assemblyOutput;
+            assemblyOutput = null;
+            if (partial != null)
+            {
+                try
+                {
+                    File.Delete(partial);
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "The unfinished output file could not be removed");
+                }
+            }
+            return true;
+        }
+
+        private AuthenticationInfo? resumeAuthentication;
+
+        public void UseCredentials(AuthenticationInfo? authentication)
+        {
+            resumeAuthentication = authentication;
+        }
+
+        protected AuthenticationInfo? RestoredCredentials()
+        {
+            if (resumeAuthentication != null) return resumeAuthentication;
+            try
+            {
+                var url = PrimaryUrl;
+                return url == null ? null : Helpers.GetAuthenticationInfoFromConfig(url);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Saved credentials could not be looked up");
+                return null;
+            }
+        }
+
+        private const int TelemetryLockWaitMilliseconds = 40;
+        private volatile DownloadTransferTelemetryProjection? lastTransferTelemetry;
+
         public DownloadTransferTelemetryProjection CaptureTransferTelemetry()
         {
-            rwLock.EnterReadLock();
+            if (!rwLock.TryEnterReadLock(TelemetryLockWaitMilliseconds))
+            {
+                return lastTransferTelemetry ??
+                    new DownloadTransferTelemetryProjection(DownloadResumeCapability.Unknown, 0, Array.Empty<DownloadRangeTelemetry>());
+            }
             try
             {
                 var ranges = pieces.Values.Select(piece => new DownloadRangeTelemetry(
@@ -125,7 +176,9 @@ namespace ADM.Core.Downloader.Progressive
                     piece.State.ToString())).ToList();
                 var active = pieces.Values.Count(piece => piece.State == SegmentState.Downloading);
                 var capability = pieces.Count == 0 ? DownloadResumeCapability.Unknown : (resumable ? DownloadResumeCapability.Yes : DownloadResumeCapability.No);
-                return new DownloadTransferTelemetryProjection(capability, active, ranges);
+                var projection = new DownloadTransferTelemetryProjection(capability, active, ranges);
+                lastTransferTelemetry = projection;
+                return projection;
             }
             finally { rwLock.ExitReadLock(); }
         }
@@ -273,6 +326,7 @@ namespace ADM.Core.Downloader.Progressive
                 {
                     SaveChunkState();
                     this.AssemblePieces();
+                    if (AssemblyWasInterrupted()) return;
                     OnFinished();
                     return;
                 }

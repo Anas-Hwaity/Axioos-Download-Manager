@@ -124,6 +124,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                         if (this.AllFinished())
                         {
                             this.AssemblePieces();
+                            if (AssemblyWasInterrupted()) return;
                             Console.WriteLine("Download finished");
                             base.OnFinished();
                             return;
@@ -132,7 +133,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                         {
                             this.http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
                             http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
-                            init = true;
+                            init = state!.FileSize >= 0 || pieces.Values.Any(piece => piece.Downloaded > 0);
                             CreatePiece();
                         }
                     }
@@ -172,6 +173,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
         public override void RestoreState()
         {
             state = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(Id!);
+            if (state!.Authentication == null) state.Authentication = RestoredCredentials();
 
 
             try
@@ -320,7 +322,9 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
 
                     var outFile = state!.ConvertToMp3 ? Path.Combine(this.GetState().TempDir!, Guid.NewGuid().ToString())
                         : this.TargetFile;
+                    var outputExisted = !state!.ConvertToMp3 && File.Exists(outFile!);
                     using var outfs = new FileStream(outFile!, FileMode.Create, FileAccess.Write);
+                    if (!state!.ConvertToMp3 && !outputExisted) assemblyOutput = outFile;
                     try
                     {
                         foreach (var pc in pieces)
@@ -390,8 +394,11 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                                     if (prg > 100) prg = 100;
                                     this.OnAssembleProgressChanged(prg);
                                 };
+                                outfs.Flush();
+                                assemblyOutput = File.Exists(TargetFile!) ? null : TargetFile;
                                 var res = mediaProcessor.ConvertToMp3Audio(outFile!, TargetFile!,
                                     this.cancelFlag, out totalBytes);
+                                if (this.cancelFlag.IsCancellationRequested) return;
                                 if (res != MediaProcessingResult.Success)
                                 {
                                     throw new AssembleFailedException(
@@ -439,6 +446,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                     if (this.cancelFlag.IsCancellationRequested) return;
                     Log.Debug("Deleting file parts");
                     DeleteFileParts();
+                    assemblyCompleted = true;
                 }
                 catch (Exception ex)
                 {

@@ -308,6 +308,7 @@ namespace ADM.Core.Downloader.Adaptive.Hls
         {
             var state = DownloadStateIO.LoadMultiSourceHLSDownloadState(Id!);
             this._state = state;
+            RestoreCredentials();
 
             try
             {

@@ -187,6 +187,44 @@ namespace ADM.Core.UI
             }
         }
 
+        private static void VerifyDownload(string file, UpdateInfo update)
+        {
+            var problem = FindDownloadProblem(file, update);
+            if (problem == null) return;
+            try
+            {
+                File.Delete(file);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Rejected component download could not be removed");
+            }
+            throw new InvalidDataException(problem);
+        }
+
+        private static string? FindDownloadProblem(string file, UpdateInfo update)
+        {
+            var info = new FileInfo(file);
+            if (!info.Exists || info.Length == 0) return "The downloaded component is missing or empty.";
+            if (update.Size > 0 && info.Length != update.Size) return "The downloaded component has the wrong size.";
+            const string prefix = "sha256:";
+            var digest = update.Digest;
+            if (digest == null || !digest.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Debug("No published digest for " + update.Name + ", size check only");
+                return null;
+            }
+            string actual;
+            using (var stream = File.OpenRead(file))
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            {
+                actual = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", string.Empty);
+            }
+            return string.Equals(actual, digest.Substring(prefix.Length).Trim(), StringComparison.OrdinalIgnoreCase)
+                ? null
+                : "The downloaded component does not match its published digest.";
+        }
+
         private void ProgressChanged(object? sender, ProgressResultEventArgs e)
         {
             try
@@ -205,6 +243,7 @@ namespace ADM.Core.UI
             try
             {
                 Log.Debug("Finished " + updates[count].Name);
+                VerifyDownload(http!.TargetFile!, updates[count]);
                 downloaded += updates[count].Size;
                 installNames.Add(updates[count].Name);
                 count++;

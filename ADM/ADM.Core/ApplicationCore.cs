@@ -394,6 +394,7 @@ namespace ADM.Core
                 download.Failed += DownloadFailed;
                 download.SetTargetDirectory(item.Value.TargetDir);
                 download.SetFileName(item.Value.Name, item.Value.FileNameFetchMode);
+                download.UseCredentials(item.Value.Authentication);
                 var showProgressWindow = Config.Instance.ShowProgressWindow;
                 if (showProgressWindow && !nonInteractive)
                 {
@@ -592,7 +593,7 @@ namespace ADM.Core
                 }
 
                 Helpers.RunGC();
-                ProcessNextQueuedItem();
+                ProcessNextQueuedItem(true);
             }
         }
 
@@ -613,7 +614,7 @@ namespace ADM.Core
                 }
 
                 Helpers.RunGC();
-                ProcessNextQueuedItem();
+                ProcessNextQueuedItem(false);
             }
         }
 
@@ -661,7 +662,7 @@ namespace ADM.Core
                 }
 
                 Helpers.RunGC();
-                ProcessNextQueuedItem();
+                ProcessNextQueuedItem(false);
             }
         }
 
@@ -811,7 +812,7 @@ namespace ADM.Core
             return liveDownloads.ContainsKey(id) || queuedDownloads.ContainsKey(id);
         }
 
-        private void ProcessNextQueuedItem()
+        private void ProcessNextQueuedItem(bool finished)
         {
             if (queuedDownloads.Count > 0)
             {
@@ -822,21 +823,35 @@ namespace ADM.Core
                 {
                     ResumeDownload(new Dictionary<string, DownloadItemBase> { [kv.Key] = entry }, kv.Value);
                 }
+                return;
             }
-            else
+            if (liveDownloads.Count > 0) return;
+            if (awakePingTimer.Enabled)
             {
-                if (Config.Instance.ShutdownAfterAllFinished)
+                Log.Debug("Stopping keep awake timer");
+                awakePingTimer.Stop();
+            }
+            if (!finished) return;
+            if (Config.Instance.RunCommandAfterCompletion)
+            {
+                try
+                {
+                    PlatformHelper.RunCommand(Config.Instance.AfterCompletionCommand);
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "The program set to run after downloads finish could not be started");
+                }
+            }
+            if (Config.Instance.ShutdownAfterAllFinished)
+            {
+                try
                 {
                     PlatformHelper.ShutDownPC();
                 }
-                if (awakePingTimer.Enabled)
+                catch (Exception ex)
                 {
-                    Log.Debug("Stopping keep awake timer");
-                    awakePingTimer.Stop();
-                }
-                if (Config.Instance.RunCommandAfterCompletion)
-                {
-                    PlatformHelper.RunCommand(Config.Instance.AfterCompletionCommand);
+                    Log.Debug(ex, "The shutdown after downloads finish could not be started");
                 }
             }
         }
@@ -975,48 +990,34 @@ namespace ADM.Core
             {
                 if (entry == null) return;
                 string? tempDir = null;
-                var validEntry = false;
-                switch (entry.DownloadType)
+                try
                 {
-                    case "Http":
-                        var h1 = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(entry.Id);
-                        if (h1 != null)
-                        {
-                            tempDir = h1.TempDir;
-                            validEntry = true;
-                        }
-                        break;
-                    case "Dash":
-                        var h2 = DownloadStateIO.LoadDualSourceHTTPDownloaderState(entry.Id);
-                        if (h2 != null)
-                        {
-                            tempDir = h2.TempDir;
-                            validEntry = true;
-                        }
-                        break;
-                    case "Hls":
-                        var hls = DownloadStateIO.LoadMultiSourceHLSDownloadState(entry.Id);
-                        if (hls != null)
-                        {
-                            tempDir = hls.TempDirectory;
-                            validEntry = true;
-                        }
-                        break;
-                    case "Mpd-Dash":
-                        var dash = DownloadStateIO.LoadMultiSourceDASHDownloadState(entry.Id);
-                        if (dash != null)
-                        {
-                            tempDir = dash.TempDirectory;
-                            validEntry = true;
-                        }
-                        break;
+                    switch (entry.DownloadType)
+                    {
+                        case "Http":
+                            tempDir = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(entry.Id)?.TempDir;
+                            break;
+                        case "Dash":
+                            tempDir = DownloadStateIO.LoadDualSourceHTTPDownloaderState(entry.Id)?.TempDir;
+                            break;
+                        case "Hls":
+                            tempDir = DownloadStateIO.LoadMultiSourceHLSDownloadState(entry.Id)?.TempDirectory;
+                            break;
+                        case "Mpd-Dash":
+                            tempDir = DownloadStateIO.LoadMultiSourceDASHDownloadState(entry.Id)?.TempDirectory;
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "No saved state was found for the removed download");
                 }
 
-                if (validEntry)
-                {
-                    RemoveStateFiles(entry.Id, removeInfo);
+                RemoveStateFiles(entry.Id, removeInfo);
 
-                    if (entry is FinishedDownloadItem && deleteDownloadedFile)
+                if (entry is FinishedDownloadItem && deleteDownloadedFile)
+                {
+                    try
                     {
                         var file = Path.Combine(entry.TargetDir, entry.Name);
                         if (File.Exists(file))
@@ -1024,18 +1025,22 @@ namespace ADM.Core
                             File.Delete(file);
                         }
                     }
-
-                    try
-                    {
-                        if (Directory.Exists(tempDir) && !string.IsNullOrEmpty(tempDir))
-                        {
-                            Directory.Delete(tempDir, true);
-                        }
-                    }
                     catch (Exception ex)
                     {
-                        Log.Debug(ex, ex.Message);
+                        Log.Debug(ex, "The downloaded file could not be deleted");
                     }
+                }
+
+                try
+                {
+                    if (tempDir != null && tempDir.Length > 0 && Directory.Exists(tempDir))
+                    {
+                        Directory.Delete(tempDir, true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, ex.Message);
                 }
             }
             catch (Exception ex)

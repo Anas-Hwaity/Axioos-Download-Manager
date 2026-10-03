@@ -1057,10 +1057,6 @@ namespace ADM.GtkUI
 
         public void DeleteAllFinishedDownloads()
         {
-            if (!GtkHelper.ShowConfirmMessageBox(this, TextResource.GetText("MENU_DELETE_COMPLETED"), "ADM"))
-            {
-                return;
-            }
             finishedDownloadsStore.Clear();
         }
 

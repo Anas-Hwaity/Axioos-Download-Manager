@@ -177,6 +177,7 @@ namespace ADM.Core
                 SingleInstance.Ensure();
                 s_Init = true;
                 Initialized?.Invoke(null, EventArgs.Empty);
+                PlatformHelper.HonorAutoStartChoice();
                 if (PlatformHelper.IsFirstRun())
                 {
                     FirstRunCallback?.Invoke(null, EventArgs.Empty);

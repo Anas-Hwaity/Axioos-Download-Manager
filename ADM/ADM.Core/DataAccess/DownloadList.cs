@@ -23,6 +23,7 @@ namespace ADM.Core.DataAccess
 
         private SQLiteCommand cmdFetchAll, cmdFetchConditional, cmdFetchOne, cmdUpdateProgress, cmdUpdateTargetDir,
             cmdInsertOne, cmdMarkFinished, cmdUpdateStatus, cmdUpdateNameAndSize, cmdUpdateNameAndFolder, cmdUpdateOne, cmdDelete;
+        private SQLiteCommand? cmdDeleteTags;
 
         public bool LoadDownloads(
             out List<InProgressDownloadItem> inProgressDownloads,
@@ -464,8 +465,13 @@ namespace ADM.Core.DataAccess
             {
                 try
                 {
-                    using var cmdClearAllFinished = new SQLiteCommand("DELETE FROM downloads WHERE completed=1", db);
+                    using var transaction = db.BeginTransaction();
+                    using var cmdClearFinishedTags = new SQLiteCommand(
+                        "DELETE FROM download_tags WHERE download_id IN (SELECT id FROM downloads WHERE completed=1)", db, transaction);
+                    cmdClearFinishedTags.ExecuteNonQuery();
+                    using var cmdClearAllFinished = new SQLiteCommand("DELETE FROM downloads WHERE completed=1", db, transaction);
                     cmdClearAllFinished.ExecuteNonQuery();
+                    transaction.Commit();
                     return true;
                 }
                 catch (Exception ex)
@@ -486,6 +492,12 @@ namespace ADM.Core.DataAccess
                     {
                         cmdDelete = new SQLiteCommand("DELETE FROM downloads WHERE id=@id", db);
                     }
+                    if (cmdDeleteTags == null)
+                    {
+                        cmdDeleteTags = new SQLiteCommand("DELETE FROM download_tags WHERE download_id=@id", db);
+                    }
+                    SetParam("@id", id, cmdDeleteTags.Parameters);
+                    cmdDeleteTags.ExecuteNonQuery();
                     SetParam("@id", id, cmdDelete.Parameters);
                     cmdDelete.ExecuteNonQuery();
                     return true;

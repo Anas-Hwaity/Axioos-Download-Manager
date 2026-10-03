@@ -9,6 +9,7 @@ namespace ADM.Core.BrowserMonitoring
     internal sealed class BrowserTakeoverOwnershipStore
     {
         internal const int MinimumRetentionHours = 24;
+        internal const int AcceptedRetentionDays = 30;
         private const string FileName = "takeover-ownership-v1.json";
         private readonly object sync = new object();
         private readonly string directory;
@@ -160,8 +161,10 @@ namespace ADM.Core.BrowserMonitoring
             var remove = new List<string>();
             foreach (var pair in records)
             {
-                var expired = now - pair.Value.UpdatedAtUtc >= TimeSpan.FromHours(MinimumRetentionHours);
+                var age = now - pair.Value.UpdatedAtUtc;
+                var expired = age >= TimeSpan.FromHours(MinimumRetentionHours);
                 if (expired && (pair.Value.State == "pending" || pair.Value.State == "terminal" || pair.Value.State == "declined")) remove.Add(pair.Key);
+                else if (age >= TimeSpan.FromDays(AcceptedRetentionDays)) remove.Add(pair.Key);
             }
             foreach (var key in remove) records.Remove(key);
         }

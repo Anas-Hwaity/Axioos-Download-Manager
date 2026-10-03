@@ -216,7 +216,7 @@ namespace ADM.Core
         public bool DoubleClickOpenFile => Config.Instance.DoubleClickOpenFile;
         public bool OpenFolder(string? folder, string fileName) => !string.IsNullOrWhiteSpace(folder) && PlatformHelper.OpenFolder(folder!, fileName);
         public bool OpenFile(string file) => PlatformHelper.OpenFile(file);
-        public void EnableRunOnLogon() => Config.Instance.RunOnLogon = true;
+        public void EnableRunOnLogon() => PlatformHelper.EnableAutoStartUnlessDeclined();
         public void SubscribeInitialized(EventHandler handler) => ApplicationContext.Initialized += handler;
         public void SubscribeApplicationEvent(EventHandler<ApplicationEvent> handler) => ApplicationContext.ApplicationEvent += handler;
         public void UnsubscribeApplicationEvent(EventHandler<ApplicationEvent> handler) => ApplicationContext.ApplicationEvent -= handler;

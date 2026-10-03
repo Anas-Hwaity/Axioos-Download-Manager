@@ -10,6 +10,7 @@ using ADM.Wpf.UI.Dialogs.LanguageSettings;
 using ADM.Wpf.UI.Dialogs.Settings.ViewModels;
 using ADM.Wpf.UI.Dialogs.Settings.Services;
 using ADM.Wpf.UI.Navigation;
+using ADM.Wpf.UI.Common.Helpers;
 using ADM.Wpf.UI.Rules;
 using ADM.Wpf.UI.Dashboard;
 using ADM.Wpf.UI.History;
@@ -118,7 +119,7 @@ namespace ADM.Wpf.UI
             {
                 var historyQuery = AppDB.Instance.History;
                 if (historyQuery == null) return;
-                var historyWindow = new HistoryWindow(historyQuery, new HistoryActionService(core)) { Owner = mainWindow };
+                var historyWindow = new HistoryWindow(historyQuery, new HistoryActionService(core)) { Owner = WindowOwner.Usable(mainWindow) };
                 historyWindow.ShowDialog();
             };
             var dashboardLauncher = new DownloadDashboardLauncher(

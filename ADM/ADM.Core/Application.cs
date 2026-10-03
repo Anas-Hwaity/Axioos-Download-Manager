@@ -541,6 +541,7 @@ namespace ADM.Core
 
             runtimeContext.MainWindow.ClearAllFinishedClicked += (s, e) =>
             {
+                if (!runtimeContext.MainWindow.Confirm(runtimeContext.MainWindow, TextResource.GetText("MENU_DELETE_COMPLETED"))) return;
                 runtimeContext.MainWindow.DeleteAllFinishedDownloads();
                 AppDB.Instance.Downloads.RemoveAllFinished();
             };

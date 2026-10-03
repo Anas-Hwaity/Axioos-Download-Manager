@@ -19,17 +19,112 @@ namespace ADM.Core.Util
                 return false;
             }
 
-            var firstRunFile = Path.Combine(Config.AppDir, "adm-" + AppInfo.APP_VERSION + ".first-run");
-            if (!File.Exists(firstRunFile))
+            var firstRunFile = Path.Combine(Config.AppDir, "adm.first-run");
+            if (File.Exists(firstRunFile)) return false;
+            var ranBefore = false;
+            try
             {
-                try
-                {
-                    File.Create(firstRunFile).Close();
-                }
-                catch { }
-                return true;
+                Directory.CreateDirectory(Config.AppDir);
+                ranBefore = Directory.GetFiles(Config.AppDir, "adm-*.first-run").Length > 0;
+                File.Create(firstRunFile).Close();
             }
-            return false;
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The first run marker could not be written");
+            }
+            return !ranBefore;
+        }
+
+        private static string AutoStartDeclinedFile => Path.Combine(Config.AppDir, "autostart-off");
+
+        private static void RememberAutoStartChoice(bool enable)
+        {
+            try
+            {
+                if (enable)
+                {
+                    File.Delete(AutoStartDeclinedFile);
+                }
+                else
+                {
+                    Directory.CreateDirectory(Config.AppDir);
+                    File.WriteAllText(AutoStartDeclinedFile, string.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The start with Windows choice could not be remembered");
+            }
+        }
+
+        public static bool AutoStartDeclined()
+        {
+            try
+            {
+                return File.Exists(AutoStartDeclinedFile);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The start with Windows choice could not be read");
+                return false;
+            }
+        }
+
+        public static void EnableAutoStartUnlessDeclined()
+        {
+            if (AutoStartDeclined())
+            {
+                HonorAutoStartChoice();
+                return;
+            }
+            EnableAutoStart(true);
+        }
+
+        private static string VersionMarker => Path.Combine(Config.AppDir, "adm-" + AppInfo.APP_VERSION + ".updated");
+
+        public static bool IsNewVersionRun()
+        {
+            if (AcceptanceTestEnvironment.SkipFirstRun) return false;
+            try
+            {
+                return !File.Exists(VersionMarker);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The version marker could not be read");
+                return false;
+            }
+        }
+
+        public static void MarkVersionRun()
+        {
+            try
+            {
+                Directory.CreateDirectory(Config.AppDir);
+                File.Create(VersionMarker).Close();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The version marker could not be written");
+            }
+        }
+
+        public static void HonorAutoStartChoice()
+        {
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT) return;
+#if NET5_0_OR_GREATER
+            if (!OperatingSystem.IsWindows()) return;
+#endif
+            if (!AutoStartDeclined()) return;
+            try
+            {
+                using var hkcuRun = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+                hkcuRun?.DeleteValue("ADM", false);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The start with Windows entry could not be removed");
+            }
         }
 
         public static bool KillAll(string processName, out string? processExecutable)
@@ -370,6 +465,7 @@ namespace ADM.Core.Util
                             hkcuRun.DeleteValue("ADM", false);
                         }
                     }
+                    RememberAutoStartChoice(enable);
                     return true;
                 }
 #if NET5_0_OR_GREATER

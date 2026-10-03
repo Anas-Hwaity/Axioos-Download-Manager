@@ -95,6 +95,8 @@ namespace ADM.Wpf.UI
                     composition.PlatformUIService,
                     composition.RuntimeContext));
 
+            RefreshExtensionCopy();
+
             ArgsProcessor.Process(Environment.GetCommandLineArgs().Skip(1), composition.RuntimeContext);
 
             AppTrayIcon.AttachToSystemTray(composition.PlatformUIService.CreateAndShowMediaGrabber);
@@ -170,6 +172,22 @@ namespace ADM.Wpf.UI
             catch (Exception ex)
             {
                 Log.Debug(ex, "Desktop location or browser host registration failed");
+            }
+        }
+
+        private static void RefreshExtensionCopy()
+        {
+            try
+            {
+                if (PlatformHelper.IsNewVersionRun())
+                {
+                    MsixHelper.CopyExtension();
+                    PlatformHelper.MarkVersionRun();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The browser extension copy could not be refreshed");
             }
         }
 

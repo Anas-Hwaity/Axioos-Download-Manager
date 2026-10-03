@@ -77,10 +77,15 @@ namespace ADM.App.Host
                     SendArgsToADM(msg);
                 }
             }
+            catch (EndOfStreamException)
+            {
+                Debug("The browser closed the connection");
+                Environment.Exit(0);
+            }
             catch (Exception ex)
             {
                 Debug(ex.Message, ex);
-                throw;
+                Environment.Exit(1);
             }
         }
 
@@ -311,7 +316,7 @@ namespace ADM.App.Host
             while (rem > 0)
             {
                 var c = stream.Read(buf, index, rem);
-                if (c == 0) throw new IOException("Unexpected EOF");
+                if (c == 0) throw new EndOfStreamException("Unexpected EOF");
                 index += c;
                 rem -= c;
             }

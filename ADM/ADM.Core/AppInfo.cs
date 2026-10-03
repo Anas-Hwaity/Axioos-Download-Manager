@@ -6,7 +6,7 @@ namespace ADM.Core
 {
     public static class AppInfo
     {
-        public static string APP_VERSION = "1.0.1";
+        public static string APP_VERSION = "1.0.2";
         public const string BASE_VERSION = "8.0.29";
         public const string BASE_TEXT = "Built on " + ProductIdentity.LegacyDisplayName + " " + BASE_VERSION;
         public static string APP_VERSION_TEXT = $"{ProductIdentity.DisplayName} {APP_VERSION}";

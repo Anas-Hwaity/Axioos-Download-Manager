@@ -87,6 +87,7 @@ namespace ADM.Core.BrowserMonitoring
                     {
                         BrowserProtocolRuntimeDiagnostics.MarkListenerFault(ex);
                         Log.Debug(ex, "Browser protocol pipe listener failed");
+                        Thread.Sleep(ex is UnauthorizedAccessException ? 30000 : 1000);
                     }
                 }
                 finally
@@ -397,14 +398,21 @@ namespace ADM.Core.BrowserMonitoring
                 var file = FileHelper.SanitizeFileName(rawFileName ?? "download") ?? "download";
                 var headers = TakeoverRequestHeaders(payload);
                 var cookies = TakeoverCookies(payload);
+                var message = new Message { Url = url, File = file, RequestHeaders = headers, Cookies = cookies };
+                var totalSize = payload?.Value<long?>("totalSize") ?? 0;
+                if (totalSize > 0)
+                {
+                    message.ResponseHeaders["Content-Length"] = new List<string> { totalSize.ToString(System.Globalization.CultureInfo.InvariantCulture) };
+                }
+                if (runtimeContext.LinkRefresher.LinkAccepted(message))
+                {
+                    var refreshedId = "refresh-" + Guid.NewGuid().ToString("N");
+                    ownershipStore.MarkAccepted(identity, refreshedId);
+                    WriteResult(pipe, messageId, "accepted", "DurableAccepted", "Desktop used this link to refresh a waiting download.", refreshedId);
+                    return;
+                }
                 if (!runtimeContext.StartDownloadAutomatically)
                 {
-                    var message = new Message { Url = url, File = file, RequestHeaders = headers, Cookies = cookies };
-                    var totalSize = payload?.Value<long?>("totalSize") ?? 0;
-                    if (totalSize > 0)
-                    {
-                        message.ResponseHeaders["Content-Length"] = new List<string> { totalSize.ToString(System.Globalization.CultureInfo.InvariantCulture) };
-                    }
                     message.CreationOutcome = downloadId => CompleteConfirmation(identity, downloadId);
                     runtimeContext.Application.ShowNewDownloadDialog(message);
                     WriteResult(pipe, messageId, "busy", "ConfirmationRequired", "Axioos is asking where to save this download.");

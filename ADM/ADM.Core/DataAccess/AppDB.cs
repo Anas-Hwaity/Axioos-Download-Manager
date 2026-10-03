@@ -57,6 +57,7 @@ namespace ADM.Core.DataAccess
                     }
                     db = new SQLiteConnection(cs);
                     db.Open();
+                    RemoveOrphanTags(db);
                     this.RecoverySafeMode = RecoveryIntegrityGuard.CheckStartup(db, file);
                     if (this.RecoverySafeMode.Required)
                     {
@@ -83,6 +84,26 @@ namespace ADM.Core.DataAccess
                     Log.Debug(ex, ex.Message);
                     return false;
                 }
+            }
+        }
+
+        private static void RemoveOrphanTags(SQLiteConnection connection)
+        {
+            try
+            {
+                using var health = new SQLiteCommand("PRAGMA quick_check(1)", connection);
+                if (!string.Equals(Convert.ToString(health.ExecuteScalar()), "ok", StringComparison.OrdinalIgnoreCase)) return;
+                using var probe = new SQLiteCommand(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('downloads','download_tags')", connection);
+                if (Convert.ToInt64(probe.ExecuteScalar()) != 2) return;
+                using var repair = new SQLiteCommand(
+                    "DELETE FROM download_tags WHERE NOT EXISTS (SELECT 1 FROM downloads d WHERE d.id = download_tags.download_id)", connection);
+                var removed = repair.ExecuteNonQuery();
+                if (removed > 0) Log.Debug("Removed tags left behind by deleted downloads: " + removed);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Tags left behind by deleted downloads could not be removed");
             }
         }
 

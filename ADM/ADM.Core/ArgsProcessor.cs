@@ -107,7 +107,7 @@ namespace ADM.Core
                 {
                     if (args.ContainsKey("--first-run"))
                     {
-                        Config.Instance.RunOnLogon = true;
+                        PlatformHelper.EnableAutoStartUnlessDeclined();
                         Config.SaveConfig();
                         runtimeContext.Application.RunOnUiThread(() =>
                         {

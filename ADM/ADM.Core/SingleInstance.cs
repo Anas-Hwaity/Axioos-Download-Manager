@@ -4,6 +4,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using TraceLog;
@@ -13,24 +14,71 @@ namespace ADM.Core
 {
     public static class SingleInstance
     {
-        public static Mutex GlobalMutex;
+        private const string SessionMutexName = @"Local\ADM_Active_Instance";
+
+        private enum Presence
+        {
+            Absent,
+            Present,
+            Foreign
+        }
+
+        public static Mutex? GlobalMutex;
+
         public static void Ensure()
+        {
+            var machine = Probe(ProductIdentity.GlobalMutexName);
+            var session = machine == Presence.Present ? Presence.Absent : Probe(SessionMutexName);
+            if (machine == Presence.Present || session != Presence.Absent)
+            {
+                var forwarded = machine != Presence.Foreign && SendArgsToRunningInstance();
+                Environment.Exit(forwarded ? 0 : 1);
+            }
+            var sessionMarker = Claim(SessionMutexName);
+            if (sessionMarker != null) GCHandle.Alloc(sessionMarker);
+            GlobalMutex = machine == Presence.Foreign ? sessionMarker : Claim(ProductIdentity.GlobalMutexName);
+        }
+
+        public static bool AnotherAccountIsRunning()
+        {
+            return Probe(ProductIdentity.GlobalMutexName) == Presence.Foreign;
+        }
+
+        private static Presence Probe(string name)
         {
             try
             {
-                using var mutex = Mutex.OpenExisting(ProductIdentity.GlobalMutexName);
-                throw new InstanceAlreadyRunningException($"ADM instance already running, Mutex exists '{ProductIdentity.GlobalMutexName}'");
+                using var mutex = Mutex.OpenExisting(name);
+                return Presence.Present;
+            }
+            catch (WaitHandleCannotBeOpenedException ex)
+            {
+                Log.Debug(ex, "No running instance was found");
+                return Presence.Absent;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Debug(ex, "Another Windows account is running the app");
+                return Presence.Foreign;
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Exception in NativeMessagingHostHandler ctor");
-                if (ex is InstanceAlreadyRunningException)
-                {
-                    var forwarded = SendArgsToRunningInstance();
-                    Environment.Exit(forwarded ? 0 : 1);
-                }
+                Log.Debug(ex, "The running instance check failed");
+                return Presence.Absent;
             }
-            GlobalMutex = new Mutex(true, ProductIdentity.GlobalMutexName);
+        }
+
+        private static Mutex? Claim(string name)
+        {
+            try
+            {
+                return new Mutex(true, name);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The single instance marker could not be created");
+                return null;
+            }
         }
 
         private static bool SendArgsToRunningInstance()

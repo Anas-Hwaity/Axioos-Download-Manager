@@ -156,7 +156,29 @@
 
     function persistSuppressionEntries() {
         if (!chrome.storage?.local?.set) return;
-        chrome.storage.local.set({ [SUPPRESSION_KEY]: { ...suppressionEntries } }, consumeRuntimeError);
+        const site = currentSiteKey;
+        const own = Object.prototype.hasOwnProperty.call(suppressionEntries, site) ? suppressionEntries[site] : null;
+        const write = stored => {
+            const merged = stored && typeof stored === "object" && !Array.isArray(stored) ? { ...stored } : {};
+            if (own) merged[site] = own;
+            else delete merged[site];
+            chrome.storage.local.set({ [SUPPRESSION_KEY]: merged }, consumeRuntimeError);
+        };
+        if (typeof chrome.storage.local.get !== "function") {
+            write(suppressionEntries);
+            return;
+        }
+        try {
+            chrome.storage.local.get([SUPPRESSION_KEY], result => {
+                if (chrome.runtime?.lastError) {
+                    write(suppressionEntries);
+                    return;
+                }
+                write(result?.[SUPPRESSION_KEY]);
+            });
+        } catch {
+            write(suppressionEntries);
+        }
     }
 
     function loadVisitSuppressionSites() {
@@ -251,6 +273,7 @@
     }
 
     function selectMedia(overlay, item, event) {
+        if (event?.isTrusted === false) return;
         event.preventDefault();
         event.stopPropagation();
         view.setPrimaryStatus?.(overlay, "running", "Sending selected video to Axioos…");
@@ -458,6 +481,7 @@
             clear.setAttribute("role", "menuitem");
             clear.textContent = "Clear detected media";
             clear.addEventListener("click", event => {
+                if (event?.isTrusted === false) return;
                 event.preventDefault();
                 event.stopPropagation();
                 mediaList = [];
@@ -483,6 +507,7 @@
                 : analysis?.state === "failed" && analysis?.code === "AuthenticationRequired" ? "Retry using browser session"
                 : analysis?.state === "failed" ? "Retry with yt-dlp" : "Analyze this video with yt-dlp";
             analyze.addEventListener("click", event => {
+                if (event?.isTrusted === false) return;
                 event.preventDefault();
                 event.stopPropagation();
                 const current = analysisFor(targetUrl);

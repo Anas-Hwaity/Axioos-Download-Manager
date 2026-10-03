@@ -95,7 +95,7 @@ namespace ADM.GtkUI
 
         private static void ApplicationContext_FirstRunCallback(object? sender, EventArgs e)
         {
-            PlatformHelper.EnableAutoStart(true);
+            PlatformHelper.EnableAutoStartUnlessDeclined();
         }
 
         private static void ExceptionManager_UnhandledException(GLib.UnhandledExceptionArgs args)

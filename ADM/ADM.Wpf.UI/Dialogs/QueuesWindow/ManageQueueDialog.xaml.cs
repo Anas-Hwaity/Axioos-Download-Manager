@@ -163,8 +163,9 @@ namespace ADM.Wpf.UI.Dialogs.QueuesWindow
 
         public void ShowWindow(object peer)
         {
-            this.Owner = (Window)peer;
-            NativeMethods.ShowDialog(this, (Window)peer);
+            var parent = WindowOwner.Usable(peer as Window);
+            this.Owner = parent;
+            NativeMethods.ShowDialog(this, parent);
         }
 
         private void LoadQueueDetails(DownloadQueue queue)

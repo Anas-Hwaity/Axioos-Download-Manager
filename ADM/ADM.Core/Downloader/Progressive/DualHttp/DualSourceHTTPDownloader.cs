@@ -141,6 +141,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                          if (this.AllFinished())
                          {
                              this.AssemblePieces();
+                             if (AssemblyWasInterrupted()) return;
                              Log.Debug("Download finished");
                              base.OnFinished();
                              return;
@@ -331,6 +332,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
         public override void RestoreState()
         {
             state = DownloadStateIO.LoadDualSourceHTTPDownloaderState(Id!);
+            if (state.Authentication == null) state.Authentication = RestoredCredentials();
             try
             {
                 if (!TransactedIO.ReadStream("chunks.db", state!.TempDir!, s =>
@@ -422,6 +424,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                             if (prg > 100) prg = 100;
                             this.OnAssembleProgressChanged(prg);
                         };
+                        assemblyOutput = File.Exists(TargetFile) ? null : TargetFile;
                         var res = mediaProcessor.MergeAudioVideStream(file1, file2, TargetFile,
                             this.cancelFlag, out totalBytes);
                         if (this.cancelFlag.IsCancellationRequested) return;
@@ -456,6 +459,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                     if (this.cancelFlag.IsCancellationRequested) return;
                     Log.Debug("Deleting file parts");
                     DeleteFileParts();
+                    assemblyCompleted = true;
                 }
                 catch (Exception ex)
                 {

@@ -26,6 +26,7 @@ namespace ADM.Core.UI
             dwnCmpldDlg.DontShowAgainClickd += (sender, args) =>
             {
                 Config.Instance.ShowDownloadCompleteWindow = false;
+                Config.SaveConfig();
             };
             dwnCmpldDlg.ShowDownloadCompleteDialog();
         }

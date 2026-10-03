@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?define ProductVersion = "$(env.BUILD_VER)"?>
-<?define ProductUpgradeCode="3E462F34-3D19-4247-AD64-1B74703555D6"?>
+<?define ProductUpgradeCode="741CBBE2-3911-4192-A051-AFF85038EFD7"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"  xmlns:ui="http://schemas.microsoft.com/wix/UIExtension">
   <Product Id="*" Name="Axioos Download Manager" Codepage="utf-32" Language="1033" Version="$(var.ProductVersion)" Manufacturer="Anas Al Hwaity" UpgradeCode="$(var.ProductUpgradeCode)">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
@@ -69,20 +69,20 @@
   <Fragment>
     <Icon Id="AppIcon" SourceFile="icon.ico"/>
     <DirectoryRef Id="ProgramMenuSubFolder">
-      <Component Id="StartMenuShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab43168cef">
+      <Component Id="StartMenuShortcut" Guid="e2010274-669f-4c64-a7d2-9ac3d507c7ee">
         <Shortcut Id="AppStartMenuShortcut" Name="Axioos Download Manager" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]adm-app.exe'  Advertise="no"></Shortcut>
         <RegistryValue Root="HKCU" Key="Software\Axioos Download Manager" Name="Installed1" Type="integer" Value="1" KeyPath="yes"/>
         <RemoveFolder Id="ProgramMenuSubFolder" On="uninstall"/>
       </Component>
     </DirectoryRef>
     <DirectoryRef Id="INSTALLFOLDER">
-      <Component Id="ProgramShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab53168cef">
+      <Component Id="ProgramShortcut" Guid="5fd8abf9-1c16-426e-b069-abc5d3b23e6b">
         <Shortcut Id="AppShortcut" Name="Axioos Download Manager" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]adm-app.exe'  Advertise="no"></Shortcut>
         <RegistryValue Root="HKLM" Key="Software\Axioos Download Manager" Name="Installed2" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
     </DirectoryRef>
     <DirectoryRef Id="DesktopFolder">
-      <Component Id="DesktopShortcut" Guid="4c5c4bce-2625-4aa0-8741-a5ab53268cef">
+      <Component Id="DesktopShortcut" Guid="e557c047-0aef-44ea-b7dc-494974be6ad1">
         <Shortcut Id="AppDesktopShortcut"  Name="Axioos Download Manager" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER" Target='[INSTALLFOLDER]adm-app.exe'  Advertise="no"></Shortcut>
         <RegistryValue Root="HKCU" Key="Software\Axioos Download Manager" Name="Installed3" Type="integer" Value="1" KeyPath="yes"/>
       </Component>

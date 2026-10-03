@@ -23,6 +23,24 @@ namespace ADM.Core
 
         public static IReadOnlyList<ReleaseNoteSection> Sections { get; } = new[]
         {
+            new ReleaseNoteSection("New in 1.0.2", new[]
+            {
+                "Axioos no longer freezes while it joins the video and audio of a large download, and pausing during that step works.",
+                "Answering No to Clear finished downloads now keeps the list. Before, the list came back empty after a restart.",
+                "Deleting a download that has tags no longer makes the whole list disappear on the next start.",
+                "Delete file from disk now removes finished downloads from disk, and leftover data files are cleaned up.",
+                "Shut down when all downloads finish only acts when the last download really finished, not after a pause or a failed download.",
+                "Queue and scheduler, settings and other windows open correctly when Axioos was started in the tray.",
+                "Streaming downloads no longer hang after a dropped connection, and stopping one while it is being assembled no longer leaves a cut off file marked as finished.",
+                "A download that needs a user name and password keeps them when it is resumed.",
+                "The setup program has its own identity, so it no longer replaces or collides with Xtreme Download Manager. It still upgrades Axioos 1.0.0 and 1.0.1.",
+                "From this version on, Axioos remembers when you turn off Start with Windows and keeps it off after later updates. The settings window no longer opens twice after setup.",
+                "The browser monitoring switch in the extension is remembered, and the choice to stop showing the download complete window is saved.",
+                "The download button that Axioos adds to web pages only reacts to your own clicks.",
+                "yt-dlp and its JavaScript helper are checked against the published file before they are installed. They are still downloaded only once.",
+                "Cookies are no longer passed on when a download is redirected to a different web site.",
+                "Axioos no longer crashes when a second Windows account starts it while another account has it open."
+            }),
             new ReleaseNoteSection("New in 1.0.1", new[]
             {
                 "A browser download now stays paused in the browser until you confirm it in Axioos. If you close the Axioos dialog, the browser simply continues the download, so nothing is lost.",

@@ -57,6 +57,7 @@ namespace ADM.Core.Clients.Http
             AuthenticationInfo? authentication = null)
         {
             var req = this.CreateRequest(uri);
+            req.AllowAutoRedirect = false;
             if (headers != null)
             {
                 foreach (var e in headers)
@@ -133,9 +134,21 @@ namespace ADM.Core.Clients.Http
                 var location = response.Headers["Location"];
                 if (string.IsNullOrEmpty(location)) break;
                 if (!Uri.TryCreate(response.ResponseUri ?? r.RequestUri, location, out var target)) break;
-                var next = CreateRedirectRequest(r, target);
+                if (target.Scheme != Uri.UriSchemeHttp && target.Scheme != Uri.UriSchemeHttps) break;
+                HttpWebRequest next;
+                try
+                {
+                    next = CreateRedirectRequest(r, target);
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Redirect request could not be created");
+                    response.Close();
+                    throw;
+                }
                 response.Close();
                 r = next;
+                session.Request = r;
                 response = GetResponse(r);
                 hops++;
             }
@@ -155,7 +168,7 @@ namespace ADM.Core.Clients.Http
         private static bool IsUnfollowedRedirect(HttpWebResponse response)
         {
             var code = (int)response.StatusCode;
-            return code == 307 || code == 308;
+            return code == 301 || code == 302 || code == 303 || code == 307 || code == 308;
         }
 
         private static HttpWebResponse GetResponse(HttpWebRequest request)
@@ -184,15 +197,19 @@ namespace ADM.Core.Clients.Http
         private HttpWebRequest CreateRedirectRequest(HttpWebRequest previous, Uri target)
         {
             var next = CreateRequest(target);
+            next.AllowAutoRedirect = false;
             var answered = previous.Address ?? previous.RequestUri;
             var sameAuthority = string.Equals(answered.Authority, target.Authority, StringComparison.OrdinalIgnoreCase)
                 && answered.Scheme == target.Scheme;
+            var sameSite = sameAuthority || (IsSameSite(answered.Host, target.Host)
+                && !(answered.Scheme == Uri.UriSchemeHttps && target.Scheme != Uri.UriSchemeHttps));
             foreach (var key in previous.Headers.AllKeys)
             {
                 var lower = key.ToLowerInvariant();
                 var value = previous.Headers[key];
                 if (value == null || lower == "host" || lower == "connection" || lower == "proxy-connection") continue;
-                if (!sameAuthority && (lower == "authorization" || lower == "cookie")) continue;
+                if (!sameAuthority && lower == "authorization") continue;
+                if (!sameSite && lower == "cookie") continue;
                 if (lower == "range")
                 {
                     ApplyRange(next, value);
@@ -212,6 +229,51 @@ namespace ADM.Core.Clients.Http
                 next.Credentials = previous.Credentials;
             }
             return next;
+        }
+
+        private static bool IsSameSite(string first, string second)
+        {
+            if (string.Equals(first, second, StringComparison.OrdinalIgnoreCase)) return true;
+            if (Uri.CheckHostName(first) != UriHostNameType.Dns || Uri.CheckHostName(second) != UriHostNameType.Dns) return false;
+            var site = SiteOf(first);
+            return site.Length > 0 && string.Equals(site, SiteOf(second), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string SiteOf(string host)
+        {
+            var labels = host.TrimEnd('.').Split('.');
+            if (labels.Length < 2) return string.Empty;
+            var count = 2;
+            if (labels[labels.Length - 1].Length == 2 && IsSharedSecondLevel(labels[labels.Length - 2])) count = 3;
+            if (labels.Length < count) return string.Empty;
+            return string.Join(".", labels, labels.Length - count, count);
+        }
+
+        private static bool IsSharedSecondLevel(string label)
+        {
+            switch (label.ToLowerInvariant())
+            {
+                case "co":
+                case "com":
+                case "net":
+                case "org":
+                case "gov":
+                case "edu":
+                case "ac":
+                case "or":
+                case "ne":
+                case "go":
+                case "mil":
+                case "nom":
+                case "sch":
+                case "ltd":
+                case "plc":
+                case "gob":
+                case "gouv":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static void ApplyRange(HttpWebRequest request, string value)

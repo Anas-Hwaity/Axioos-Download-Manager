@@ -31,6 +31,7 @@ namespace ADM.Core.Downloader
         public void SetFileName(string name, FileNameFetchMode fileNameFetchMode);
         public void SetTargetDirectory(string? folder);
         public void ConfigureTransferPolicy(int? speedLimitKiB, int? maxConnections);
+        public void UseCredentials(AuthenticationInfo? authentication);
         public long GetTotalDownloaded();
         public long GetDownloaded();
     }

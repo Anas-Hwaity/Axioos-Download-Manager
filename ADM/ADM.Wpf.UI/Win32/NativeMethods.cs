@@ -6,24 +6,43 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using TraceLog;
 using ADM.Wpf.UI.Common;
+using ADM.Wpf.UI.Common.Helpers;
 
 namespace ADM.Wpf.UI.Win32
 {
     internal static class NativeMethods
     {
-        public static bool? ShowDialog(this Window window, Window owner)
+        public static bool? ShowDialog(this Window window, Window? owner)
         {
-            EnableWindow(owner, false);
-            DispatcherFrame? df = new();
-            window.Show();
+            var parent = WindowOwner.Usable(owner);
+            if (parent == null && window.Owner == null)
+            {
+                window.ShowInTaskbar = true;
+                if (window.WindowStartupLocation == WindowStartupLocation.CenterOwner) window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
+            if (parent != null) EnableWindow(parent, false);
+            DispatcherFrame df = new();
             window.Closed += (_, _) =>
             {
                 df.Continue = false;
-                df = null;
-                EnableWindow(owner, true);
-                owner.Activate();
+                if (parent != null)
+                {
+                    EnableWindow(parent, true);
+                    if (parent.IsVisible) parent.Activate();
+                }
             };
+            try
+            {
+                window.Show();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "A dialog could not be shown");
+                if (parent != null) EnableWindow(parent, true);
+                throw;
+            }
             Dispatcher.PushFrame(df);
             return window is IDialog dialog ? dialog.Result : null;
         }

@@ -13,9 +13,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import setup_payload
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 PRODUCT = "Axioos Download Manager"
-UPGRADE_CODE = "3E462F34-3D19-4247-AD64-1B74703555D6"
+UPGRADE_CODE = "741CBBE2-3911-4192-A051-AFF85038EFD7"
 OUTPUT = ROOT / "release-output"
 STAGE = OUTPUT / "app"
 APP = ROOT / "app" / "ADM" if (ROOT / "app" / "ADM").is_dir() else ROOT / "ADM"
@@ -226,6 +226,7 @@ def build_msi():
     work = OUTPUT / "wix"
     work.mkdir()
     env = dict(os.environ, BUILD_VER=VERSION, PRODUCT_UPGRADE_CODE=UPGRADE_CODE)
+    env.pop("LEGACY_UPGRADE_CODE", None)
     harvest = work / "harvest.wxs"
     target = work / MSI_NAME
     run([tools["heat.exe"], "dir", STAGE, "-o", harvest, "-scom", "-frag", "-srd", "-sreg", "-gg", "-cg", "NET4", "-dr", "INSTALLFOLDER"], cwd=INSTALLER, env=env)

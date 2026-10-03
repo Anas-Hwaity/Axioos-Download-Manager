@@ -67,6 +67,11 @@ namespace ADM.Core.BrowserMonitoring
                 catch (Exception ex)
                 {
                     Log.Debug(ex.ToString());
+                    if (SingleInstance.AnotherAccountIsRunning())
+                    {
+                        Log.Debug("Browser control is held by another Windows account");
+                        return;
+                    }
                     runtimeContext.Application.ShowMessageBox(null, TextResource.GetText("MSG_ALREADY_RUNNING"));
                 }
             }).Start();
