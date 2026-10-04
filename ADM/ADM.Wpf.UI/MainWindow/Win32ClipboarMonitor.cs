@@ -50,11 +50,7 @@ namespace ADM.Wpf.UI
         {
             try
             {
-                var text = System.Windows.Clipboard.GetText();
-                if (!string.IsNullOrEmpty(text))
-                {
-                    return text;
-                }
+                return System.Windows.Clipboard.GetText() ?? string.Empty;
             }
             catch (Exception ex)
             {

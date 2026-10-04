@@ -82,9 +82,9 @@ namespace ADM.Core
             if (inProgressOnly)
             {
                 var selectedItems = context.MainWindow.SelectedInProgressRows;
-                context.CoreService.StopDownloads(selectedItems.Select(x => x.DownloadEntry.Id));
                 if (context.MainWindow.Confirm(context.MainWindow, TextResource.GetText("DEL_SEL_TEXT")))
                 {
+                    context.CoreService.StopDownloads(selectedItems.Where(x => x != null).Select(x => x.DownloadEntry.Id).ToList());
                     foreach (var item in selectedItems)
                     {
                         if (item != null)
@@ -346,14 +346,12 @@ namespace ADM.Core
         public void RestartDownload()
         {
             DownloadItemBase? ent = null;
-            IInProgressDownloadRow? iRow = null;
             if (context.MainWindow.IsInProgressViewSelected)
             {
                 var rows = context.MainWindow.SelectedInProgressRows;
                 if (rows.Count > 0)
                 {
                     ent = rows[0].DownloadEntry;
-                    iRow = rows[0];
                 }
             }
             else
@@ -365,11 +363,9 @@ namespace ADM.Core
                 }
             }
             if (ent == null) return;
-            context.CoreService.RestartDownload(ent);
-            if (iRow != null)
+            if (!context.CoreService.RestartDownload(ent))
             {
-                context.MainWindow.Delete(iRow);
-                AppDB.Instance.Downloads.RemoveDownloadById(ent.Id);
+                context.PlatformUIService.ShowMessageBox(context.MainWindow, TextResource.GetText("MSG_RESTART_FAILED"));
             }
         }
     }

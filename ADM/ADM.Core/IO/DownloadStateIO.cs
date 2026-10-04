@@ -60,6 +60,67 @@ namespace ADM.Core.IO
 
     public static class DownloadStateIO
     {
+        public static int ReadSpeedLimit(string id, string? downloadType)
+        {
+            switch (downloadType)
+            {
+                case "Http":
+                    return LoadSingleSourceHTTPDownloaderState(id).SpeedLimit;
+                case "Dash":
+                    return LoadDualSourceHTTPDownloaderState(id).SpeedLimit;
+                case "Hls":
+                    return LoadMultiSourceHLSDownloadState(id).SpeedLimit;
+                case "Mpd-Dash":
+                    return LoadMultiSourceDASHDownloadState(id).SpeedLimit;
+                default:
+                    return 0;
+            }
+        }
+
+        public static ProxyInfo? ReadProxy(string id, string? downloadType)
+        {
+            switch (downloadType)
+            {
+                case "Http":
+                    return LoadSingleSourceHTTPDownloaderState(id).Proxy;
+                case "Dash":
+                    return LoadDualSourceHTTPDownloaderState(id).Proxy;
+                case "Hls":
+                    return LoadMultiSourceHLSDownloadState(id).Proxy;
+                case "Mpd-Dash":
+                    return LoadMultiSourceDASHDownloadState(id).Proxy;
+                default:
+                    return null;
+            }
+        }
+
+        public static void WriteSpeedLimit(string id, string? downloadType, int setting)
+        {
+            switch (downloadType)
+            {
+                case "Http":
+                    var single = LoadSingleSourceHTTPDownloaderState(id);
+                    single.SpeedLimit = setting;
+                    Save(single);
+                    break;
+                case "Dash":
+                    var dual = LoadDualSourceHTTPDownloaderState(id);
+                    dual.SpeedLimit = setting;
+                    Save(dual);
+                    break;
+                case "Hls":
+                    var hls = LoadMultiSourceHLSDownloadState(id);
+                    hls.SpeedLimit = setting;
+                    Save(hls);
+                    break;
+                case "Mpd-Dash":
+                    var dash = LoadMultiSourceDASHDownloadState(id);
+                    dash.SpeedLimit = setting;
+                    Save(dash);
+                    break;
+            }
+        }
+
         public static SingleSourceHTTPDownloaderState LoadSingleSourceHTTPDownloaderState(string id)
         {
             SingleSourceHTTPDownloaderState? state = null;

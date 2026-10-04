@@ -97,7 +97,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
             {
                 Log.Debug("SingleSourceHTTPDownloader start");
                 OnStarted();
-                this.http ??= http = HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
+                this.http ??= http = HttpClientFactory.NewHttpClient(TransferProxy(state));
                 http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                 grabberDict[chunk.Id].Download();
             }
@@ -131,7 +131,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                         }
                         else
                         {
-                            this.http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
+                            this.http ??= HttpClientFactory.NewHttpClient(TransferProxy(state));
                             http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                             init = state!.FileSize >= 0 || pieces.Values.Any(piece => piece.Downloaded > 0);
                             CreatePiece();
@@ -174,6 +174,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
         {
             state = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(Id!);
             if (state!.Authentication == null) state.Authentication = RestoredCredentials();
+            RestoreTransferPolicy(state);
 
 
             try

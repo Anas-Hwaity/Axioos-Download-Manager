@@ -38,9 +38,6 @@ namespace ADM.Core.Legacy
             config.FallbackUserAgent = state.FallbackUserAgent;
         }
 
-        public void ResetFallbackUserAgent()
-        {
-            Config.Instance.FallbackUserAgent = Config.DefaultFallbackUserAgent;
-        }
+        public string DefaultFallbackUserAgent => Config.DefaultFallbackUserAgent;
     }
 }

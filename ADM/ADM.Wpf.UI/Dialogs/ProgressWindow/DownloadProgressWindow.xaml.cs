@@ -37,6 +37,11 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
 
             actPrgUpdate = value =>
             {
+                if (!limitRefreshedForRun)
+                {
+                    limitRefreshedForRun = true;
+                    RefreshSpeedLimitText();
+                }
                 var val = value >= 0 && value <= 100 ? value : 0;
                 this.PrgProgress.Value = val;
                 var prg = value >= 0 && value <= 100 ? value + "% " : "";
@@ -57,9 +62,7 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
         {
             if (e.EventType == "ConfigChanged")
             {
-                var speedLimitEnabled = runtimeContext.EnableSpeedLimit ? runtimeContext.DefaultDownloadSpeed > 0 : false;
-                var defaultSpeedLimit = runtimeContext.DefaultDownloadSpeed;
-                Dispatcher.BeginInvoke(new Action(() => SetSpeedLimitText(speedLimitEnabled, defaultSpeedLimit)));
+                Dispatcher.BeginInvoke(new Action(RefreshSpeedLimitText));
             }
         }
 
@@ -120,7 +123,11 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
         public string DownloadId
         {
             get => this.downloadId;
-            set => this.downloadId = value;
+            set
+            {
+                this.downloadId = value;
+                Dispatcher.BeginInvoke(new Action(RefreshSpeedLimitText));
+            }
         }
 
         public void DestroyWindow()
@@ -169,9 +176,24 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
         {
             Dispatcher.BeginInvoke(new Action(() =>
             {
+                limitRefreshedForRun = false;
                 BtnPause.Content = TextResource.GetText("MENU_PAUSE");
                 BtnPause.Tag = null;
             }));
+        }
+
+        private void RefreshSpeedLimitText()
+        {
+            try
+            {
+                var setting = string.IsNullOrEmpty(downloadId) ? 0 : runtimeContext.CoreService.GetDownloadSpeedLimit(downloadId);
+                var limit = ADM.Core.Downloader.SpeedLimiter.EffectiveLimit(setting, runtimeContext.EnableSpeedLimit, runtimeContext.DefaultDownloadSpeed);
+                SetSpeedLimitText(limit > 0, limit);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The speed limit label could not be refreshed");
+            }
         }
 
         private void SetSpeedLimitText(bool enable, int limit)
@@ -235,8 +257,15 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
 
         private void TxtSpeedLimit_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            runtimeContext.PlatformUIService.ShowSpeedLimiterWindow();
-
+            var id = downloadId;
+            if (string.IsNullOrEmpty(id))
+            {
+                runtimeContext.PlatformUIService.ShowSpeedLimiterWindow();
+                return;
+            }
+            var window = new SpeedLimiterWindow { Owner = this };
+            window.Title = TextResource.GetText("SPEED_LIMIT_TITLE") + " - " + TxtFileName.Text;
+            SpeedLimiterUIController.RunForDownload(window, runtimeContext, id, RefreshSpeedLimitText);
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -258,11 +287,10 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var speedLimitEnabled = runtimeContext.EnableSpeedLimit ? runtimeContext.DefaultDownloadSpeed > 0 : false;
-            var defaultSpeedLimit = runtimeContext.DefaultDownloadSpeed;
-            SetSpeedLimitText(speedLimitEnabled, defaultSpeedLimit);
+            RefreshSpeedLimitText();
         }
 
         private string downloadId = string.Empty;
+        private bool limitRefreshedForRun;
     }
 }

@@ -130,5 +130,12 @@ namespace ADM.Core.Rules
             if (context == null) throw new ArgumentNullException(nameof(context));
             return engine.Evaluate(provider.GetRules(), context);
         }
+
+        public RuleEvaluationResult Preview(IReadOnlyList<DownloadRule> draftRules, DownloadRuleContext context)
+        {
+            if (draftRules == null) throw new ArgumentNullException(nameof(draftRules));
+            if (context == null) throw new ArgumentNullException(nameof(context));
+            return engine.Evaluate(draftRules, context);
+        }
     }
 }

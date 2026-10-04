@@ -136,8 +136,10 @@ namespace ADM.Core
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo,
             string? queueId,
-            bool convertToMp3)
+            bool convertToMp3,
+            int? speedLimitKiB = null)
         {
+            var transferProxy = FollowsGlobalProxy(proxyInfo) ? null : proxyInfo;
             var rulePolicy = downloadRulePolicy.EvaluateCreation(downloadInfo, fileName, targetFolder, startImmediately, queueId);
             ApplyRulePolicy(rulePolicy, ref targetFolder, ref startImmediately, ref queueId);
             Log.Debug($"Starting download: {fileName} {fileNameFetchMode} {convertToMp3}");
@@ -148,23 +150,23 @@ namespace ADM.Core
             {
                 case SingleSourceHTTPDownloadInfo info:
                     http = new SingleSourceHTTPDownloader(info, authentication: authentication,
-                        proxy: proxyInfo, mediaProcessor: new FFmpegMediaProcessor(),
+                        proxy: transferProxy, mediaProcessor: new FFmpegMediaProcessor(),
                         convertToMp3: convertToMp3);
-                    RequestDataIO.SaveDownloadInfo(http.Id!, info);
+                    RequestDataIO.SaveDownloadInfo(http.Id!, info, convertToMp3 || info.ConvertToMp3);
                     break;
                 case DualSourceHTTPDownloadInfo info:
                     http = new DualSourceHTTPDownloader(info, authentication: authentication,
-                        proxy: proxyInfo, mediaProcessor: new FFmpegMediaProcessor());
+                        proxy: transferProxy, mediaProcessor: new FFmpegMediaProcessor());
                     RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 case MultiSourceHLSDownloadInfo info:
                     http = new MultiSourceHLSDownloader(info, authentication: authentication,
-                        proxy: proxyInfo, mediaProcessor: new FFmpegMediaProcessor());
+                        proxy: transferProxy, mediaProcessor: new FFmpegMediaProcessor());
                     RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 case MultiSourceDASHDownloadInfo info:
                     http = new MultiSourceDASHDownloader(info, authentication: authentication,
-                        proxy: proxyInfo, mediaProcessor: new FFmpegMediaProcessor());
+                        proxy: transferProxy, mediaProcessor: new FFmpegMediaProcessor());
                     RequestDataIO.SaveDownloadInfo(http.Id!, info);
                     break;
                 default:
@@ -172,7 +174,7 @@ namespace ADM.Core
                     return null;
             }
 
-            http.ConfigureTransferPolicy(rulePolicy.SpeedLimitKiB, rulePolicy.MaxConnections);
+            http.ConfigureTransferPolicy(speedLimitKiB ?? rulePolicy.SpeedLimitKiB, rulePolicy.MaxConnections);
 
             if (!string.IsNullOrEmpty(queueId))
             {
@@ -182,6 +184,110 @@ namespace ADM.Core
             http.SetTargetDirectory(targetFolder);
             StartDownload(http, targetFolder, startImmediately, authentication, proxyInfo, rulePolicy.CategoryTags);
             return http.Id;
+        }
+
+        private static bool FollowsGlobalProxy(ProxyInfo? requested)
+        {
+            if (!requested.HasValue) return true;
+            var global = Config.Instance.Proxy;
+            if (!global.HasValue) return requested.Value.ProxyType == ProxyType.System;
+            var a = requested.Value;
+            var b = global.Value;
+            if (a.ProxyType != b.ProxyType) return false;
+            if (a.ProxyType != ProxyType.Custom) return true;
+            return string.Equals(a.Host ?? string.Empty, b.Host ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+                && a.Port == b.Port
+                && (a.UserName ?? string.Empty) == (b.UserName ?? string.Empty)
+                && (a.Password ?? string.Empty) == (b.Password ?? string.Empty);
+        }
+
+        public int GetDownloadSpeedLimit(string id)
+        {
+            try
+            {
+                IBaseDownloader? live;
+                lock (this)
+                {
+                    live = liveDownloads.GetValueOrDefault(id).Key;
+                }
+                if (live != null) return live.SpeedLimitSetting;
+                var entry = AppDB.Instance.Downloads.GetDownloadById(id);
+                return entry == null ? 0 : DownloadStateIO.ReadSpeedLimit(id, entry.DownloadType);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The speed limit of the download could not be read");
+                return 0;
+            }
+        }
+
+        public void SetDownloadSpeedLimit(string id, int setting)
+        {
+            try
+            {
+                IBaseDownloader? live;
+                lock (this)
+                {
+                    live = liveDownloads.GetValueOrDefault(id).Key;
+                }
+                if (live != null)
+                {
+                    live.SetSpeedLimit(setting);
+                    return;
+                }
+                var entry = AppDB.Instance.Downloads.GetDownloadById(id);
+                if (entry != null) DownloadStateIO.WriteSpeedLimit(id, entry.DownloadType, setting);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The speed limit of the download could not be changed");
+            }
+        }
+
+        private IRequestData? LoadRequest(DownloadItemBase entry, out bool convertToMp3)
+        {
+            convertToMp3 = false;
+            switch (entry.DownloadType)
+            {
+                case "Http":
+                    var info = RequestDataIO.LoadSingleSourceHTTPDownloadInfo(entry.Id);
+                    convertToMp3 = info?.ConvertToMp3 ?? false;
+                    return info;
+                case "Dash":
+                    return RequestDataIO.LoadDualSourceHTTPDownloadInfo(entry.Id);
+                case "Hls":
+                    return RequestDataIO.LoadMultiSourceHLSDownloadInfo(entry.Id);
+                case "Mpd-Dash":
+                    var dash = RequestDataIO.LoadMultiSourceDASHDownloadInfo(entry.Id);
+                    if (dash == null) return null;
+                    var segments = (dash.AudioSegments?.Count ?? 0) + (dash.VideoSegments?.Count ?? 0);
+                    return segments > 0 ? dash : null;
+                default:
+                    return null;
+            }
+        }
+
+        private static FileNameFetchMode SettledNameMode(DownloadItemBase entry, bool convertToMp3)
+        {
+            var settled = convertToMp3 || entry is FinishedDownloadItem || entry.Size > 0;
+            return settled || !Enum.IsDefined(typeof(FileNameFetchMode), entry.FileNameFetchMode)
+                ? FileNameFetchMode.None
+                : entry.FileNameFetchMode;
+        }
+
+        private int? RuleConnectionLimit(DownloadItemBase entry)
+        {
+            try
+            {
+                var request = LoadRequest(entry, out _);
+                if (request == null) return null;
+                return downloadRulePolicy.ConnectionLimitFor(request, entry.Name);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The connection rule for the resumed download could not be evaluated");
+                return null;
+            }
         }
 
         private static void ApplyRulePolicy(DownloadCreationRuleOutcome policy, ref string? targetFolder, ref bool startImmediately, ref string? queueId)
@@ -393,8 +499,9 @@ namespace ADM.Core
                 download.Cancelled += DownloadCancelled;
                 download.Failed += DownloadFailed;
                 download.SetTargetDirectory(item.Value.TargetDir);
-                download.SetFileName(item.Value.Name, item.Value.FileNameFetchMode);
+                download.SetFileName(item.Value.Name, SettledNameMode(item.Value, false));
                 download.UseCredentials(item.Value.Authentication);
+                download.SetMaxConnections(RuleConnectionLimit(item.Value));
                 var showProgressWindow = Config.Instance.ShowProgressWindow;
                 if (showProgressWindow && !nonInteractive)
                 {
@@ -1049,46 +1156,54 @@ namespace ADM.Core
             }
         }
 
-        public void RestartDownload(DownloadItemBase entry)
+        public bool RestartDownload(DownloadItemBase entry)
         {
-            if (entry == null) return;
-            var convertToMp3 = false;
-            IRequestData? request;
+            if (entry == null) return false;
+            if (entry is InProgressDownloadItem && IsDownloadActive(entry.Id)) return false;
             try
             {
-                switch (entry.DownloadType)
+                var request = LoadRequest(entry, out var convertToMp3);
+                if (request == null) return false;
+                var previousLimit = 0;
+                var proxy = entry.Proxy;
+                if (entry is InProgressDownloadItem)
                 {
-                    case "Http":
-                        var info = RequestDataIO.LoadSingleSourceHTTPDownloadInfo(entry.Id);
-                        request = info;
-                        convertToMp3 = info?.ConvertToMp3 ?? false;
-                        break;
-                    case "Dash":
-                        request = RequestDataIO.LoadDualSourceHTTPDownloadInfo(entry.Id);
-                        break;
-                    case "Hls":
-                        request = RequestDataIO.LoadMultiSourceHLSDownloadInfo(entry.Id);
-                        break;
-                    case "Mpd-Dash":
-                        request = RequestDataIO.LoadMultiSourceDASHDownloadInfo(entry.Id);
-                        break;
-                    default:
-                        request = null;
-                        break;
+                    previousLimit = GetDownloadSpeedLimit(entry.Id);
+                    try
+                    {
+                        proxy = DownloadStateIO.ReadProxy(entry.Id, entry.DownloadType) ?? Config.Instance.Proxy;
+                        if (!convertToMp3 && entry.DownloadType == "Http")
+                        {
+                            convertToMp3 = DownloadStateIO.LoadSingleSourceHTTPDownloaderState(entry.Id).ConvertToMp3;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(ex, "The saved transfer settings of the download could not be read");
+                    }
                 }
-
-                if (request != null)
+                var created = this.StartDownload(request, entry.Name,
+                               SettledNameMode(entry, convertToMp3),
+                               entry.TargetDir, true, entry.Authentication, proxy, null,
+                               convertToMp3, previousLimit == 0 ? (int?)null : previousLimit);
+                if (created == null || created.Length == 0) return false;
+                RemoveDownload(entry, false, entry is InProgressDownloadItem);
+                if (entry is InProgressDownloadItem)
                 {
-                    this.StartDownload(request, entry.Name,
-                                   FileNameFetchMode.FileNameAndExtension,
-                                   entry.TargetDir, true, entry.Authentication, entry.Proxy, null,
-                                   convertToMp3);
-                    RemoveDownload(entry, false, false);
+                    var previousId = entry.Id;
+                    AppDB.Instance.Downloads.RemoveDownloadById(previousId);
+                    runtimeContext.Application.RunOnUiThread(() =>
+                    {
+                        var row = runtimeContext.MainWindow.FindInProgressItem(previousId);
+                        if (row != null) runtimeContext.MainWindow.Delete(row);
+                    });
                 }
+                return true;
             }
             catch (Exception ex)
             {
                 Log.Debug(ex, "Error restarting download");
+                return false;
             }
         }
 

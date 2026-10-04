@@ -16,9 +16,9 @@
     <StartupObject>ADM.Wpf.UI.App</StartupObject>
     <Description>Axioos Download Manager</Description>
     <AssemblyTitle>Axioos Download Manager</AssemblyTitle>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
-    <FileVersion>1.0.2.0</FileVersion>
-    <Version>1.0.2</Version>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
+    <Version>1.0.3</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Product>Axioos Download Manager</Product>
     <Company>Anas Al Hwaity</Company>

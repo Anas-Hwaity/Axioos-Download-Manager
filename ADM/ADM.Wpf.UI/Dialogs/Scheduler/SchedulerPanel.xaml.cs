@@ -9,6 +9,7 @@ namespace ADM.Wpf.UI.Dialogs.Scheduler
         public event EventHandler? ValueChanged;
         private byte[] bits;
         private readonly CheckBox[] checkboxes;
+        private bool loading;
 
         public SchedulerPanel()
         {
@@ -26,12 +27,12 @@ namespace ADM.Wpf.UI.Dialogs.Scheduler
                 chk.Unchecked += (a, b) =>
                 {
                     chkEveryday.IsChecked = false;
-                    this.ValueChanged?.Invoke(this, EventArgs.Empty);
+                    RaiseValueChanged();
                 };
 
                 chk.Checked += (a, b) =>
                 {
-                    this.ValueChanged?.Invoke(this, EventArgs.Empty);
+                    RaiseValueChanged();
                 };
             }
 
@@ -43,8 +44,14 @@ namespace ADM.Wpf.UI.Dialogs.Scheduler
                 }
             };
 
-            StartTime.ValueChanged += (_, _) => this.ValueChanged?.Invoke(this, EventArgs.Empty);
-            EndTime.ValueChanged += (_, _) => this.ValueChanged?.Invoke(this, EventArgs.Empty);
+            StartTime.ValueChanged += (_, _) => RaiseValueChanged();
+            EndTime.ValueChanged += (_, _) => RaiseValueChanged();
+        }
+
+        private void RaiseValueChanged()
+        {
+            if (loading) return;
+            this.ValueChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void SetDays(WeekDays days)
@@ -55,14 +62,9 @@ namespace ADM.Wpf.UI.Dialogs.Scheduler
             foreach (var chk in checkboxes)
             {
                 var day = (WeekDays)bits[index];
-                if (((byte)days & (byte)day) == (byte)day)
-                {
-                    chk.IsChecked = true;
-                }
-                else
-                {
-                    allChecked = false;
-                }
+                var selected = ((byte)days & (byte)day) == (byte)day;
+                chk.IsChecked = selected;
+                if (!selected) allChecked = false;
                 index++;
             }
 
@@ -97,9 +99,17 @@ namespace ADM.Wpf.UI.Dialogs.Scheduler
             }
             set
             {
-                SetDays(value.Days);
-                StartTime.Time = value.StartTime;
-                EndTime.Time = value.EndTime;
+                loading = true;
+                try
+                {
+                    SetDays(value.Days);
+                    StartTime.Time = value.StartTime;
+                    EndTime.Time = value.EndTime;
+                }
+                finally
+                {
+                    loading = false;
+                }
             }
         }
     }

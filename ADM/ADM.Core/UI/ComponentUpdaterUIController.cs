@@ -56,7 +56,8 @@ namespace ADM.Core.UI
                 try
                 {
                     updaterUI.Inderminate = true;
-                    if (!UpdateChecker.GetAppUpdates(appVersion, out updates, out _, this.updateMode))
+                    var complete = UpdateChecker.GetAppUpdates(appVersion, out updates, out _, this.updateMode);
+                    if (!complete && updates.Count == 0)
                     {
                         updaterUI.DownloadFailed(this, new DownloadFailedEventArgs(ErrorCode.Generic));
                         return;

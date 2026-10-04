@@ -60,8 +60,9 @@ namespace ADM.Core.Telemetry
         {
             var entry = GetInProgress(downloadId, out var failure);
             if (entry == null) return failure;
-            core.RestartDownload(entry);
-            return DownloadDashboardCommandResult.Accepted;
+            return core.RestartDownload(entry)
+                ? DownloadDashboardCommandResult.Accepted
+                : DownloadDashboardCommandResult.Unavailable;
         }
 
         public DownloadDashboardCommandResult Cancel(string downloadId, DownloadCancellationPolicy policy = DownloadCancellationPolicy.RetainPartial)

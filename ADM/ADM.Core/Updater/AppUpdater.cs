@@ -28,18 +28,21 @@ namespace ADM.Core.Updater
                 period: TimeSpan.FromHours(3));
         }
 
+        public static bool Refresh(IApplicationRuntimeContext runtimeContext)
+        {
+            Log.Debug("Checking for updates...");
+            if (!UpdateChecker.GetAppUpdates(runtimeContext.CoreService.AppVerion, out IList<UpdateInfo> found, out _)) return false;
+            Updates = found;
+            return true;
+        }
+
         private static void CheckForUpdate(IApplicationRuntimeContext runtimeContext)
         {
             try
             {
-                Log.Debug("Checking for updates...");
-                if (UpdateChecker.GetAppUpdates(runtimeContext.CoreService.AppVerion, out IList<UpdateInfo> upd, out bool firstUpdate))
+                if (Refresh(runtimeContext) && Updates != null && Updates.Count > 0)
                 {
-                    Updates = upd;
-                    if (upd != null && upd.Count > 0)
-                    {
-                        runtimeContext.Application.ShowUpdateAvailableNotification();
-                    }
+                    runtimeContext.Application.ShowUpdateAvailableNotification();
                 }
             }
             catch (Exception ex)

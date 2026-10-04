@@ -104,6 +104,12 @@ namespace ADM.Core.UI
             window.ShowWindow();
         }
 
+        internal static int? SpeedLimitChoice(bool enabled, int valueKiB, IDownloadCreationPreferences preferences)
+        {
+            var setting = SpeedLimiter.SettingFromDialog(enabled, valueKiB, preferences.EnableSpeedLimit, preferences.DefaultDownloadSpeed);
+            return setting == SpeedLimiter.FollowGlobal ? (int?)null : setting;
+        }
+
         private static Dictionary<string, List<string>>? WithUserAgent(Dictionary<string, List<string>>? headers, string fallbackUserAgent)
         {
             if (headers == null) return null;
@@ -157,7 +163,8 @@ namespace ADM.Core.UI
                 window.Authentication,
                 window.Proxy ?? preferences.DefaultProxy,
                 queueId,
-                false);
+                false,
+                SpeedLimitChoice(window.EnableSpeedLimit, window.SpeedLimit, preferences));
             reportOutcome(downloadId);
             window.DisposeWindow();
         }

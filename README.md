@@ -10,9 +10,9 @@ A Windows download manager focused on reliable transfers, browser integration, m
 
 ## Download
 
-Axioos Download Manager 1.0.2 targets Windows 10 and Windows 11.
+Axioos Download Manager 1.0.3 targets Windows 10 and Windows 11.
 
-The supported installation path is the [GitHub Releases page](https://github.com/Anas-Hwaity/Axioos-Download-Manager/releases). The primary Windows setup asset is `admsetup-1.0.2.exe`.
+The supported installation path is the [GitHub Releases page](https://github.com/Anas-Hwaity/Axioos-Download-Manager/releases). The primary Windows setup asset is `admsetup-1.0.3.exe`.
 
 ## Four ways to make Axioos yours
 

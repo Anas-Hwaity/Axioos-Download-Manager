@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using TraceLog;
 using Translations;
 using ADM.Core.BrowserMonitoring;
@@ -23,6 +24,7 @@ namespace ADM.Core
         private readonly IMainCommandService mainCommands;
         private readonly IApplicationRuntimeContext runtimeContext;
         private Action<string, int, double, long> updateProgressAction;
+        private int updateCheckRunning;
         public event EventHandler WindowLoaded;
 
         public Application(IApplicationCore core, IVideoTracker videoTracker, IDownloadCreationPreferences downloadCreationPreferences, IMainCommandService mainCommands, IApplicationRuntimeContext runtimeContext)
@@ -65,6 +67,7 @@ namespace ADM.Core
                 Name = targetFileName,
                 DateAdded = date,
                 DownloadType = type,
+                FileNameFetchMode = fileNameFetchMode,
                 Id = id,
                 Progress = 0,
                 Size = fileSize,
@@ -572,23 +575,7 @@ namespace ADM.Core
                 PlatformHelper.OpenBrowser(Links.SupportUrl);
             };
 
-            runtimeContext.MainWindow.UpdateClicked += (s, e) =>
-            {
-                if (AppUpdater.IsAppUpdateAvailable)
-                {
-                    PlatformHelper.OpenBrowser(AppUpdater.GetUpdatePage(runtimeContext.CoreService));
-                    return;
-                }
-                if (AppUpdater.IsComponentUpdateAvailable)
-                {
-                    if (runtimeContext.MainWindow.Confirm(runtimeContext.MainWindow, AppUpdater.ComponentUpdateText))
-                    {
-                        LaunchUpdater(UpdateMode.YoutubeDLUpdateOnly);
-                    }
-                    return;
-                }
-                runtimeContext.PlatformUIService.ShowMessageBox(runtimeContext.MainWindow, TextResource.GetText("MSG_NO_UPDATE"));
-            };
+            runtimeContext.MainWindow.UpdateClicked += (s, e) => CheckForUpdatesNow();
 
             runtimeContext.MainWindow.BrowserMonitoringButtonClicked += (s, e) =>
             {
@@ -634,6 +621,54 @@ namespace ADM.Core
 
             runtimeContext.MainWindow.InProgressContextMenuOpening += (_, _) => InProgressContextMenuOpening();
             runtimeContext.MainWindow.FinishedContextMenuOpening += (_, _) => FinishedContextMenuOpening();
+        }
+
+        private void CheckForUpdatesNow()
+        {
+            if (Interlocked.Exchange(ref updateCheckRunning, 1) == 1) return;
+            var worker = new Thread(() =>
+            {
+                var reached = false;
+                try
+                {
+                    reached = AppUpdater.Refresh(runtimeContext);
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "The update check failed");
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref updateCheckRunning, 0);
+                }
+                RunOnUiThread(() => ShowUpdateCheckResult(reached));
+            });
+            worker.IsBackground = true;
+            worker.Start();
+        }
+
+        private void ShowUpdateCheckResult(bool reached)
+        {
+            if (!reached)
+            {
+                runtimeContext.PlatformUIService.ShowMessageBox(runtimeContext.MainWindow, TextResource.GetText("MSG_UPDATE_CHECK_FAILED"));
+                return;
+            }
+            if (AppUpdater.IsAppUpdateAvailable)
+            {
+                runtimeContext.MainWindow.ShowUpdateAvailableNotification();
+                PlatformHelper.OpenBrowser(AppUpdater.GetUpdatePage(runtimeContext.CoreService));
+                return;
+            }
+            if (AppUpdater.IsComponentUpdateAvailable)
+            {
+                if (runtimeContext.MainWindow.Confirm(runtimeContext.MainWindow, AppUpdater.ComponentUpdateText))
+                {
+                    LaunchUpdater(UpdateMode.YoutubeDLUpdateOnly);
+                }
+                return;
+            }
+            runtimeContext.PlatformUIService.ShowMessageBox(runtimeContext.MainWindow, TextResource.GetText("MSG_NO_UPDATE"));
         }
 
         public void ShowQueueWindow(object window)

@@ -63,10 +63,11 @@ namespace ADM.Core
 
         private void Cm_ClipboardChanged(object? sender, EventArgs e)
         {
-            var text = runtimeContext.Application.GetPlatformClipboardMonitor().GetClipboardText();
-            if (text is string clipboardText && clipboardText.Length > 0 && Helpers.IsUriValid(clipboardText) && clipboardText != lastClipboardText)
+            var clipboardText = runtimeContext.Application.GetPlatformClipboardMonitor().GetClipboardText();
+            if (clipboardText == null || clipboardText == lastClipboardText) return;
+            lastClipboardText = clipboardText;
+            if (clipboardText.Length > 0 && Helpers.IsUriValid(clipboardText))
             {
-                lastClipboardText = clipboardText;
                 runtimeContext.CoreService.AddDownload(new Message { Url = clipboardText });
             }
         }

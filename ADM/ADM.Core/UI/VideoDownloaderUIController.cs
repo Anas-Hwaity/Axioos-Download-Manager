@@ -357,7 +357,8 @@ namespace ADM.Core.UI
                         view.Authentication,
                         view.Proxy ?? downloadCreationPreferences.DefaultProxy,
                         queueId,
-                        false
+                        false,
+                        NewDownloadDialogUIController.SpeedLimitChoice(view.EnableSpeedLimit, view.SpeedLimit, downloadCreationPreferences)
                     );
             }
         }

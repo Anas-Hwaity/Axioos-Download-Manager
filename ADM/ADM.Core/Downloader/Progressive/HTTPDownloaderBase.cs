@@ -106,11 +106,71 @@ namespace ADM.Core.Downloader.Progressive
             speedLimiter.ThrottleIfNeeded(this);
         }
 
-        public void ConfigureTransferPolicy(int? speedLimitKiB, int? maxConnections)
+        private const int SettingLockWaitMilliseconds = 250;
+
+        public int SpeedLimitSetting => speedLimiter.Setting;
+
+        public void SetMaxConnections(int? maxConnections)
         {
             if (maxConnections.HasValue && maxConnections.Value > 0) MAX_COUNT = maxConnections.Value;
+        }
+
+        public void ConfigureTransferPolicy(int? speedLimitKiB, int? maxConnections)
+        {
+            SetMaxConnections(maxConnections);
             speedLimiter.SetExplicitLimit(speedLimitKiB);
-            if (speedLimitKiB.HasValue && speedLimitKiB.Value > 0) GetState().SpeedLimit = speedLimitKiB.Value;
+            var state = GetState();
+            if (state != null) state.SpeedLimit = speedLimiter.Setting;
+        }
+
+        private volatile bool speedLimitUnsaved;
+
+        public void SetSpeedLimit(int setting)
+        {
+            speedLimiter.SetExplicitLimit(setting);
+            var state = GetState();
+            if (state == null) return;
+            state.SpeedLimit = speedLimiter.Setting;
+            speedLimitUnsaved = true;
+            SaveSpeedLimitWhenFree();
+        }
+
+        private void SaveSpeedLimitWhenFree()
+        {
+            if (!speedLimitUnsaved) return;
+            if (!rwLock.TryEnterWriteLock(SettingLockWaitMilliseconds)) return;
+            try
+            {
+                SaveSpeedLimitIfChanged();
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
+        }
+
+        private void SaveSpeedLimitIfChanged()
+        {
+            if (!speedLimitUnsaved) return;
+            speedLimitUnsaved = false;
+            try
+            {
+                SaveState();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The speed limit could not be saved with the download");
+            }
+        }
+
+        protected void RestoreTransferPolicy(BaseHTTPDownloaderState state)
+        {
+            speedLimiter.SetExplicitLimit(state.SpeedLimit);
+        }
+
+        protected ProxyInfo? TransferProxy(BaseHTTPDownloaderState? state)
+        {
+            return state?.Proxy ?? Config.Instance.Proxy;
         }
 
         protected bool assemblyCompleted;
@@ -194,6 +254,7 @@ namespace ADM.Core.Downloader.Progressive
             {
                 this.cancelFlag.Cancel();
                 this.speedLimiter.WakeIfSleeping();
+                SaveSpeedLimitWhenFree();
                 foreach (var pc in grabberDict.Keys)
                 {
                     grabberDict[pc].Stop();
@@ -343,6 +404,7 @@ namespace ADM.Core.Downloader.Progressive
             try
             {
                 rwLock.EnterWriteLock();
+                SaveSpeedLimitIfChanged();
                 totalDownloadedBytes += bytes;
                 downloadedBytesSinceStartOrResume += bytes;
 

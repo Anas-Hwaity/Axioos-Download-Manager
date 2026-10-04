@@ -112,7 +112,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                 Log.Debug("DualSourceHTTPDownloader start");
 
                 OnStarted();
-                this.http ??= http = HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
+                this.http ??= http = HttpClientFactory.NewHttpClient(TransferProxy(state));
                 http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                 grabberDict[chunk1.Id].Download();
             }
@@ -148,7 +148,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                          }
                          else
                          {
-                             this.http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
+                             this.http ??= HttpClientFactory.NewHttpClient(TransferProxy(state));
                              http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
                              CreatePiece();
                          }
@@ -286,7 +286,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                         Cookies = this.state.Cookies1,
                         Url = this.state.Url1,
                         Authentication = this.state.Authentication,
-                        Proxy = Config.Instance.Proxy
+                        Proxy = TransferProxy(this.state)
                     } :
                     new HeaderData
                     {
@@ -294,7 +294,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                         Cookies = this.state.Cookies2,
                         Url = this.state.Url2,
                         Authentication = this.state.Authentication,
-                        Proxy = Config.Instance.Proxy
+                        Proxy = TransferProxy(this.state)
                     };
             }
             return null;
@@ -333,6 +333,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
         {
             state = DownloadStateIO.LoadDualSourceHTTPDownloaderState(Id!);
             if (state.Authentication == null) state.Authentication = RestoredCredentials();
+            RestoreTransferPolicy(state);
             try
             {
                 if (!TransactedIO.ReadStream("chunks.db", state!.TempDir!, s =>

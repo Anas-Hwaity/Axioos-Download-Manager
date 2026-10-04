@@ -18,7 +18,15 @@ namespace ADM.Core.IO
             w.Write(text ?? string.Empty);
         }
 
+        private const int SegmentListMarker = -1;
+        private const int MaxSegments = 1000000;
+
         public static void SaveDownloadInfo(string id, SingleSourceHTTPDownloadInfo info)
+        {
+            SaveDownloadInfo(id, info, info.ConvertToMp3);
+        }
+
+        public static void SaveDownloadInfo(string id, SingleSourceHTTPDownloadInfo info, bool convertToMp3)
         {
             using var s = new FileStream(Path.Combine(Config.DataDir, id + ".info"), FileMode.Create);
             using var w = new BinaryWriter(s);
@@ -27,6 +35,7 @@ namespace ADM.Core.IO
             w.Write(info.ContentLength);
             StreamHelper.WriteStateHeaders(info.Headers, w);
             StreamHelper.WriteStateCookies(info.Cookies, w);
+            w.Write(convertToMp3);
         }
 
         public static void SaveDownloadInfo(string id, DualSourceHTTPDownloadInfo info)
@@ -67,7 +76,9 @@ namespace ADM.Core.IO
             w.Write(info.Duration);
             StreamHelper.WriteStateHeaders(info.Headers, w);
             StreamHelper.WriteStateCookies(info.Cookies, w);
+            w.Write(SegmentListMarker);
             var c1 = info.AudioSegments == null ? 0 : info.AudioSegments.Count;
+            w.Write(c1);
             if (c1 > 0)
             {
                 foreach (var audioSegment in info.AudioSegments!)
@@ -76,7 +87,8 @@ namespace ADM.Core.IO
                 }
             }
             var c2 = info.VideoSegments == null ? 0 : info.VideoSegments.Count;
-            if (c1 > 0)
+            w.Write(c2);
+            if (c2 > 0)
             {
                 foreach (var videoSegment in info.VideoSegments!)
                 {
@@ -102,6 +114,7 @@ namespace ADM.Core.IO
                 info.Headers = headers;
                 StreamHelper.ReadStateCookies(r, out string? cookies);
                 info.Cookies = cookies;
+                info.ConvertToMp3 = s.Position < s.Length && r.ReadBoolean();
                 return info;
             }
             catch (Exception ex)
@@ -190,7 +203,14 @@ namespace ADM.Core.IO
                 StreamHelper.ReadStateCookies(r, out string? cookies);
                 info.Cookies = cookies;
 
+                if (s.Length - s.Position < sizeof(int) || r.ReadInt32() != SegmentListMarker)
+                {
+                    Log.Debug("Saved stream request has no readable segment lists: " + id);
+                    return info;
+                }
+
                 var c1 = r.ReadInt32();
+                if (c1 < 0 || c1 > MaxSegments) throw new InvalidDataException("Segment count is out of range.");
                 if (c1 > 0)
                 {
                     info.AudioSegments = new List<Uri>(c1);
@@ -201,6 +221,7 @@ namespace ADM.Core.IO
                 }
 
                 var c2 = r.ReadInt32();
+                if (c2 < 0 || c2 > MaxSegments) throw new InvalidDataException("Segment count is out of range.");
                 if (c2 > 0)
                 {
                     info.VideoSegments = new List<Uri>(c2);

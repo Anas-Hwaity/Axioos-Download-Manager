@@ -124,6 +124,7 @@ namespace ADM.Core.Downloader.Adaptive.Dash
             var state = DownloadStateIO.LoadMultiSourceDASHDownloadState(Id!);
             this._state = state;
             RestoreCredentials();
+            RestoreTransferPolicy();
 
 
 

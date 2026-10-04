@@ -7,28 +7,54 @@ namespace ADM.Core.Downloader
 {
     public class SpeedLimiter
     {
-        private long lastTick, lastBytes;
-        private ManualResetEvent sleepHandle = new ManualResetEvent(false);
+        public const int FollowGlobal = 0;
+        public const int Unlimited = -1;
+        private const int PauseSliceMilliseconds = 100;
+
+        private const int MaxCreditMilliseconds = 100;
+        private long lastBytes;
+        private double paidUntil;
         private long lastChecked = Helpers.TickCount();
         private int cachedSpeedLimit = -2;
-        private int? explicitSpeedLimit;
+        private int explicitSetting;
+        private int wakeGeneration;
 
-        public int SpeedLimit => explicitSpeedLimit ?? cachedSpeedLimit;
+        public int Setting => explicitSetting;
+
+        public int SpeedLimit => explicitSetting > 0 ? explicitSetting : explicitSetting < 0 ? 0 : cachedSpeedLimit;
+
+        public static int SettingFromDialog(bool enabled, int valueKiB, bool globalEnabled, int globalValueKiB)
+        {
+            var globalActive = globalEnabled && globalValueKiB > 0;
+            if (!enabled) return globalActive ? Unlimited : FollowGlobal;
+            if (valueKiB <= 0) return FollowGlobal;
+            return globalActive && globalValueKiB == valueKiB ? FollowGlobal : valueKiB;
+        }
+
+        public static int EffectiveLimit(int setting, bool globalEnabled, int globalValueKiB)
+        {
+            if (setting > 0) return setting;
+            if (setting < 0) return 0;
+            return globalEnabled && globalValueKiB > 0 ? globalValueKiB : 0;
+        }
 
         public void SetExplicitLimit(int? speedLimitKiB)
         {
-            explicitSpeedLimit = speedLimitKiB.HasValue && speedLimitKiB.Value > 0 ? speedLimitKiB : null;
+            var value = speedLimitKiB ?? FollowGlobal;
+            explicitSetting = value > 0 ? value : value < 0 ? Unlimited : FollowGlobal;
             WakeIfSleeping();
         }
 
         public void WakeIfSleeping()
         {
-            this.sleepHandle.Set();
+            Interlocked.Increment(ref wakeGeneration);
         }
 
-        private int GetCachedSpeedLimit()
+        private int CurrentLimit()
         {
-            if (explicitSpeedLimit.HasValue) return explicitSpeedLimit.Value;
+            var setting = explicitSetting;
+            if (setting > 0) return setting;
+            if (setting < 0) return 0;
             var now = Helpers.TickCount();
             if (now - lastChecked > 3000 || cachedSpeedLimit == -2)
             {
@@ -53,35 +79,42 @@ namespace ADM.Core.Downloader
 
         public void ThrottleIfNeeded(IBaseDownloader downloader)
         {
-            int speedLimit = GetCachedSpeedLimit();
-            if (speedLimit < 1) return;
-            if (lastBytes == 0 || lastTick == 0)
+            if (CurrentLimit() < 1)
             {
-                lastBytes = downloader.GetDownloaded();
-                lastTick = Helpers.TickCount();
+                paidUntil = 0;
                 return;
             }
+            downloader.Lock.EnterWriteLock();
             try
             {
-                downloader.Lock.EnterWriteLock();
-                var maxBytesPerMS = (double)speedLimit * 1024 / 1000;
-                var now = Helpers.TickCount();
-                var actualTimeSpent = now - lastTick;
-                if (actualTimeSpent < 1) return;
-                var bytes = downloader.GetDownloaded();
-                var diff = bytes - lastBytes;
-                lastBytes = bytes;
-                lastTick = now;
-                var expectedTimeSpent = diff / maxBytesPerMS;
-
-                if (actualTimeSpent < expectedTimeSpent)
+                int speedLimit = CurrentLimit();
+                if (speedLimit < 1)
                 {
-                    try
-                    {
-                        sleep((int)Math.Ceiling(expectedTimeSpent - actualTimeSpent));
-                    }
-                    catch (Exception ex) { Log.Debug(ex, "Exception while throttling"); }
+                    paidUntil = 0;
+                    return;
                 }
+                var now = Helpers.TickCount();
+                var bytes = downloader.GetDownloaded();
+                if (paidUntil <= 0 || bytes < lastBytes)
+                {
+                    lastBytes = bytes;
+                    paidUntil = now;
+                    return;
+                }
+                var due = Math.Max(paidUntil, now - MaxCreditMilliseconds) + (bytes - lastBytes) * 1000.0 / (speedLimit * 1024.0);
+                lastBytes = bytes;
+                paidUntil = due;
+                var wait = (int)Math.Min(int.MaxValue, Math.Ceiling(due - now));
+                if (wait > 0)
+                {
+                    Pause(wait, downloader);
+                    var after = Helpers.TickCount();
+                    if (paidUntil > after) paidUntil = after;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Exception while throttling");
             }
             finally
             {
@@ -89,9 +122,16 @@ namespace ADM.Core.Downloader
             }
         }
 
-        private void sleep(int interval)
+        private void Pause(int interval, IBaseDownloader downloader)
         {
-            sleepHandle.WaitOne(interval);
+            var generation = Volatile.Read(ref wakeGeneration);
+            var deadline = Helpers.TickCount() + interval;
+            while (generation == Volatile.Read(ref wakeGeneration) && !downloader.IsCancelled)
+            {
+                var remaining = deadline - Helpers.TickCount();
+                if (remaining <= 0) return;
+                Thread.Sleep((int)Math.Min(remaining, PauseSliceMilliseconds));
+            }
         }
     }
 }

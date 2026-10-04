@@ -24,6 +24,7 @@ namespace ADM.Wpf.UI.Dialogs.QueuesWindow
     public partial class ManageQueueDialog : Window, IDialog, IQueuesWindow
     {
         private DownloadSchedule defaultSchedule;
+        private bool loadingQueue;
 
         public event EventHandler<QueueListEventArgs>? QueuesModified;
         public event EventHandler<DownloadListEventArgs>? QueueStartRequested;
@@ -49,6 +50,7 @@ namespace ADM.Wpf.UI.Dialogs.QueuesWindow
 
             this.SchedulerPanel.ValueChanged += (_, _) =>
             {
+                if (loadingQueue) return;
                 DownloadSchedule? schedule = null;
                 if (ChkEnableScheduler.IsChecked.HasValue && ChkEnableScheduler.IsChecked.Value)
                 {
@@ -76,6 +78,7 @@ namespace ADM.Wpf.UI.Dialogs.QueuesWindow
             this.ChkEnableScheduler.Checked += (_, _) =>
             {
                 SchedulerPanel.IsEnabled = true;
+                if (loadingQueue) return;
                 if (LbQueues.SelectedItem is DownloadQueue queue)
                 {
                     queue.Schedule = this.SchedulerPanel.Schedule;
@@ -85,6 +88,7 @@ namespace ADM.Wpf.UI.Dialogs.QueuesWindow
             this.ChkEnableScheduler.Unchecked += (_, _) =>
             {
                 SchedulerPanel.IsEnabled = false;
+                if (loadingQueue) return;
                 if (LbQueues.SelectedItem is DownloadQueue queue)
                 {
                     queue.Schedule = null;
@@ -182,15 +186,17 @@ namespace ADM.Wpf.UI.Dialogs.QueuesWindow
             }
 
             lvFiles.ItemsSource = this.downloads;
-            if (queue.Schedule.HasValue)
+            loadingQueue = true;
+            try
             {
-                this.SchedulerPanel.Schedule = queue.Schedule.Value;
+                this.SchedulerPanel.Schedule = queue.Schedule ?? this.defaultSchedule;
+                ChkEnableScheduler.IsChecked = queue.Schedule.HasValue;
+                SchedulerPanel.IsEnabled = queue.Schedule.HasValue;
             }
-            else
+            finally
             {
-                this.SchedulerPanel.Schedule = this.defaultSchedule;
+                loadingQueue = false;
             }
-            ChkEnableScheduler.IsChecked = queue.Schedule.HasValue;
         }
 
         private void EnableControls(bool enable)

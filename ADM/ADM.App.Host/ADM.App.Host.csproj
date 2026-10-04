@@ -9,6 +9,12 @@
     <Platforms>x86;x64</Platforms>
     <PlatformTarget>$(AdmPhase6PlatformTarget)</PlatformTarget>
     <AssemblyName>adm-app-host</AssemblyName>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
+    <Version>1.0.3</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Product>Axioos Download Manager</Product>
+    <Company>Anas Al Hwaity</Company>
   </PropertyGroup>
 
   <ItemGroup>

@@ -92,7 +92,7 @@ namespace ADM.Core.UI
                 startImmediately,
                 window.Authentication,
                 window.Proxy ?? preferences.DefaultProxy,
-                window.EnableSpeedLimit ? window.SpeedLimit : 0,
+                NewDownloadDialogUIController.SpeedLimitChoice(window.EnableSpeedLimit, window.SpeedLimit, preferences) ?? 0,
                 queueId,
                 window.IsMp3CheckboxChecked);
             window.DisposeWindow();

@@ -420,8 +420,9 @@ namespace ADM.Core.BrowserMonitoring
                 }
                 var info = new SingleSourceHTTPDownloadInfo { Uri = url, File = file, Cookies = cookies };
                 if (headers.ContainsKey("User-Agent")) info.Headers = headers;
+                var nameMode = string.IsNullOrWhiteSpace(requestedFile) ? FileNameFetchMode.FileNameAndExtension : FileNameFetchMode.None;
                 var desktopId = runtimeContext.CoreService.StartDownload(
-                    info, file, FileNameFetchMode.FileNameAndExtension, null, true, null, runtimeContext.Proxy, null, false);
+                    info, file, nameMode, null, true, null, runtimeContext.Proxy, null, false);
                 if (string.IsNullOrWhiteSpace(desktopId))
                 {
                     ownershipStore.ClearPending(identity);

@@ -23,6 +23,7 @@ namespace ADM.Core.Updater
             updates = new List<UpdateInfo>();
 
             firstUpdate = !File.Exists(Path.Combine(Config.AppDir, "ytdlp-update.json"));
+            var failed = false;
             try
             {
 
@@ -31,7 +32,7 @@ namespace ADM.Core.Updater
 
                 if ((updateMode & UpdateMode.AppUpdateOnly) == UpdateMode.AppUpdateOnly)
                 {
-                    var appUpdate = FindNewAppVersion(hc, appVersion);
+                    var appUpdate = FindNewAppVersion(hc, appVersion, ref failed);
                     if (appUpdate != null)
                     {
                         var au = appUpdate.Value;
@@ -44,7 +45,7 @@ namespace ADM.Core.Updater
                 {
                     if (!YtDlpInstalled())
                     {
-                        var youtubeDLUpdate = FindNewYoutubeDLVersion(hc, DateTime.MinValue);
+                        var youtubeDLUpdate = FindNewYoutubeDLVersion(hc, DateTime.MinValue, ref failed);
                         if (youtubeDLUpdate != null)
                         {
                             updates.Add(youtubeDLUpdate.Value);
@@ -52,7 +53,7 @@ namespace ADM.Core.Updater
                     }
                     if (YDLWrapper.YDLProcess.FindBundledJsRuntime(string.Empty) == null && GetDenoAssetForCurrentOS() is AssetPattern denoAsset)
                     {
-                        var deno = FindNewRelease(hc, Links.DenoReleaseGH, r => true, denoAsset);
+                        var deno = FindNewRelease(hc, Links.DenoReleaseGH, r => true, denoAsset, ref failed);
                         if (deno != null)
                         {
                             updates.Add(deno.Value);
@@ -61,7 +62,7 @@ namespace ADM.Core.Updater
                 }
 
 
-                return true;
+                return !failed;
             }
             catch (Exception ex)
             {
@@ -73,7 +74,8 @@ namespace ADM.Core.Updater
         private static UpdateInfo? FindNewRelease(IHttpClient hc,
             string url,
             Predicate<GitHubRelease> condition,
-            AssetPattern? assetPattern)
+            AssetPattern? assetPattern,
+            ref bool failed)
         {
             try
             {
@@ -126,6 +128,7 @@ namespace ADM.Core.Updater
             }
             catch (Exception ex)
             {
+                failed = true;
                 Log.Debug(ex, "Error in FindNewRelease");
             }
             return null;
@@ -196,14 +199,14 @@ namespace ADM.Core.Updater
             }
         }
 
-        private static UpdateInfo? FindNewYoutubeDLVersion(IHttpClient hc, DateTime lastUpdated) =>
+        private static UpdateInfo? FindNewYoutubeDLVersion(IHttpClient hc, DateTime lastUpdated, ref bool failed) =>
             FindNewRelease(hc, Links.YtDlpReleaseGH, r => r.PublishedAt > lastUpdated,
-                GetYoutubeDLExecutableNameForCurrentOS());
+                GetYoutubeDLExecutableNameForCurrentOS(), ref failed);
 
 
-        private static UpdateInfo? FindNewAppVersion(IHttpClient hc, Version appVersion) =>
+        private static UpdateInfo? FindNewAppVersion(IHttpClient hc, Version appVersion, ref bool failed) =>
             FindNewRelease(hc, Links.AppLatestReleaseGH, r => ParseGitHubTag(r.TagName) > appVersion,
-                GetAppInstallerNameForCurrentOS());
+                GetAppInstallerNameForCurrentOS(), ref failed);
     }
 
     internal struct GitHubRelease

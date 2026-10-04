@@ -2,7 +2,7 @@
     "name": "Axioos Integration Module",
     "action": {},
     "manifest_version": 3,
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Download with Axioos Download Manager.",
     "host_permissions": [
         "*://*/*"

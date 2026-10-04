@@ -23,6 +23,23 @@ namespace ADM.Core
 
         public static IReadOnlyList<ReleaseNoteSection> Sections { get; } = new[]
         {
+            new ReleaseNoteSection("New in 1.0.3", new[]
+            {
+                "The speed limit now really slows a download down to the value you set. Before, a limited download could run at full speed.",
+                "The speed limit link in a download's progress window now limits only that download. The limit for all downloads lives in Settings and in the main window.",
+                "The speed limit chosen in the Advanced options of a new download is applied, and it is kept after pause, resume and restart of Axioos.",
+                "A proxy chosen for one download is used for that download instead of the general proxy setting.",
+                "Looking at a scheduled queue no longer changes its days or turns its schedule off.",
+                "Pressing Delete on a running download and answering No leaves it running.",
+                "Check for updates now really checks, and says so when the update service cannot be reached.",
+                "Streaming downloads (MPEG-DASH) can be restarted and downloaded again, and a restart that cannot work no longer removes the download from the list.",
+                "Restart and Download again keep the file name you chose and keep Save as MP3.",
+                "A download taken over from the browser keeps the file name the browser showed.",
+                "Previewing download rules no longer saves them, so Cancel discards them as expected.",
+                "The Default button for the user agent in Advanced settings works.",
+                "Copying the same link again after copying something else opens the download window again.",
+                "Limits for connections set by a rule are applied again when a download is resumed."
+            }),
             new ReleaseNoteSection("New in 1.0.2", new[]
             {
                 "Axioos no longer freezes while it joins the video and audio of a large download, and pausing during that step works.",

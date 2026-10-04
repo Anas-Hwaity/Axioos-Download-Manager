@@ -24,7 +24,7 @@ namespace ADM.Wpf.UI.Dialogs.Settings.ViewModels
         {
             this.settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             IsAutoStartAvailable = isAutoStartAvailable;
-            ResetUserAgentCommand = new ActionCommand(settingsService.ResetFallbackUserAgent);
+            ResetUserAgentCommand = new ActionCommand(() => FallbackUserAgent = settingsService.DefaultFallbackUserAgent);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

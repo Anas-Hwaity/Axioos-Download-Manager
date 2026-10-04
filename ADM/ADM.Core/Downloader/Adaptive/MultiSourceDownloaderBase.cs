@@ -213,6 +213,7 @@ namespace ADM.Core.Downloader.Adaptive
                 {
                     Log.Debug("Adaptive workers did not quiesce before stop checkpoint deadline");
                 }
+                SaveSpeedLimitWhenFree();
                 Log.Debug("Stopped");
             }
             catch (Exception ex)
@@ -237,7 +238,7 @@ namespace ADM.Core.Downloader.Adaptive
                         Download();
                         return;
                     }
-                    this._http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
+                    this._http ??= HttpClientFactory.NewHttpClient(_state.Proxy ?? Config.Instance.Proxy);
                     this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
 
                     DownloadChunks();
@@ -292,7 +293,7 @@ namespace ADM.Core.Downloader.Adaptive
         {
             try
             {
-                this._http ??= HttpClientFactory.NewHttpClient(Config.Instance.Proxy);
+                this._http ??= HttpClientFactory.NewHttpClient(_state.Proxy ?? Config.Instance.Proxy);
                 this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
 
                 Directory.CreateDirectory(_state.TempDirectory);
@@ -473,6 +474,7 @@ namespace ADM.Core.Downloader.Adaptive
             try
             {
                 rwLock.EnterWriteLock();
+                SaveSpeedLimitIfChanged();
                 long tick = Helpers.TickCount();
                 totalDownloadedBytes += args.Downloaded;
                 downloadedBytesSinceStartOrResume += args.Downloaded;
@@ -783,29 +785,64 @@ namespace ADM.Core.Downloader.Adaptive
 #endif
         }
 
-        public void ConfigureTransferPolicy(int? speedLimitKiB, int? maxConnections)
+        private const int SettingLockWaitMilliseconds = 250;
+
+        public int SpeedLimitSetting => speedLimiter.Setting;
+
+        public void SetMaxConnections(int? maxConnections)
         {
             configuredMaxConnections = maxConnections.HasValue && maxConnections.Value > 0 ? maxConnections : null;
-            speedLimiter.SetExplicitLimit(speedLimitKiB);
-            if (_state != null && speedLimitKiB.HasValue && speedLimitKiB.Value > 0) _state.SpeedLimit = speedLimitKiB.Value;
         }
 
-        public void UpdateSpeedLimit(bool enable, int limit)
+        public void ConfigureTransferPolicy(int? speedLimitKiB, int? maxConnections)
         {
+            SetMaxConnections(maxConnections);
+            speedLimiter.SetExplicitLimit(speedLimitKiB);
+            if (_state != null) _state.SpeedLimit = speedLimiter.Setting;
+        }
+
+        private volatile bool speedLimitUnsaved;
+
+        public void SetSpeedLimit(int setting)
+        {
+            speedLimiter.SetExplicitLimit(setting);
+            if (_state == null) return;
+            _state.SpeedLimit = speedLimiter.Setting;
+            speedLimitUnsaved = true;
+            SaveSpeedLimitWhenFree();
+        }
+
+        private void SaveSpeedLimitWhenFree()
+        {
+            if (!speedLimitUnsaved) return;
+            if (!rwLock.TryEnterWriteLock(SettingLockWaitMilliseconds)) return;
             try
             {
-                rwLock.EnterWriteLock();
-                if (!enable)
-                {
-                    limit = 0;
-                }
-                _state.SpeedLimit = limit;
-                SaveState();
+                SaveSpeedLimitIfChanged();
             }
             finally
             {
                 rwLock.ExitWriteLock();
             }
+        }
+
+        private void SaveSpeedLimitIfChanged()
+        {
+            if (!speedLimitUnsaved) return;
+            speedLimitUnsaved = false;
+            try
+            {
+                SaveState();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The speed limit could not be saved with the download");
+            }
+        }
+
+        protected void RestoreTransferPolicy()
+        {
+            if (_state != null) speedLimiter.SetExplicitLimit(_state.SpeedLimit);
         }
     }
 

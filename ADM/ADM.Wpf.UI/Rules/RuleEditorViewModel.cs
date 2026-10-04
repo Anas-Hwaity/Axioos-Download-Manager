@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Newtonsoft.Json;
 using ADM.Core.Rules;
 
 namespace ADM.Wpf.UI.Rules
@@ -25,7 +26,12 @@ namespace ADM.Wpf.UI.Rules
         {
             this.provider = provider ?? throw new ArgumentNullException(nameof(provider));
             previewService = new DownloadRulePreviewService(engine ?? throw new ArgumentNullException(nameof(engine)), provider);
-            Rules = new ObservableCollection<DownloadRule>(provider.GetRules());
+            Rules = new ObservableCollection<DownloadRule>(CopyRules(provider.GetRules()));
+        }
+
+        private static List<DownloadRule> CopyRules(IReadOnlyList<DownloadRule> source)
+        {
+            return JsonConvert.DeserializeObject<List<DownloadRule>>(JsonConvert.SerializeObject(source)) ?? new List<DownloadRule>();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -149,9 +155,7 @@ namespace ADM.Wpf.UI.Rules
 
         public RuleEvaluationResult Preview(DownloadRuleContext context)
         {
-            provider.SaveRules(Rules.ToArray());
-            OnPropertyChanged(nameof(PersistenceError));
-            return previewService.Preview(context);
+            return previewService.Preview(Rules.ToArray(), context);
         }
 
         public RuleEvaluationResult RunPreview()

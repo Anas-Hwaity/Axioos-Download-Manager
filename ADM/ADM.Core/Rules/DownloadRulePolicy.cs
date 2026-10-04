@@ -59,6 +59,14 @@ namespace ADM.Core.Rules
             this.ruleProvider = ruleProvider ?? throw new ArgumentNullException(nameof(ruleProvider));
         }
 
+        public int? ConnectionLimitFor(IRequestData requestData, string fileName)
+        {
+            if (requestData == null) throw new ArgumentNullException(nameof(requestData));
+            var evaluation = ruleEngine.Evaluate(ruleProvider.GetRules(), BuildContext(requestData, fileName));
+            var connections = evaluation.EffectiveActions.FirstOrDefault(a => a.Kind == RuleActionKind.MaxConnections);
+            return ResolvePositiveNumeric(connections);
+        }
+
         public DownloadCreationRuleOutcome EvaluateCreation(
             IRequestData requestData,
             string fileName,

@@ -32,7 +32,12 @@ namespace ADM.Core
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo,
             string? queueId,
-            bool convertToMp3);
+            bool convertToMp3,
+            int? speedLimitKiB = null);
+
+        public int GetDownloadSpeedLimit(string id);
+
+        public void SetDownloadSpeedLimit(string id, int setting);
 
         public void StopDownloads(IEnumerable<string> list, bool closeProgressWindow = false);
 
@@ -50,7 +55,7 @@ namespace ADM.Core
 
         public AuthenticationInfo? PromptForCredential(string id, string message);
 
-        public void RestartDownload(DownloadItemBase entry);
+        public bool RestartDownload(DownloadItemBase entry);
 
         public string? GetPrimaryUrl(DownloadItemBase entry);
 

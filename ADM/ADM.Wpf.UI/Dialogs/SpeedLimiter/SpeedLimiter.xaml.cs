@@ -78,7 +78,7 @@ namespace ADM.Wpf.UI.Dialogs.SpeedLimiter
             {
                 valid = false;
             }
-            ChkEnabled.IsChecked = valid;
+            if (!valid) ChkEnabled.IsChecked = false;
         }
     }
 }

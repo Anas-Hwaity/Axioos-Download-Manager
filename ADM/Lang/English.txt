@@ -305,3 +305,5 @@ SETTINGS_THEME=Colour theme
 SETTINGS_BACKDROP=Background
 SETTINGS_ACCENT=Accent
 SETTINGS_APPEARANCE_NOTE=Changes preview right away. Press Save to keep them, or Cancel to go back. The moving glass panels pick up a new theme the next time Axioos starts.
+MSG_UPDATE_CHECK_FAILED=Axioos could not reach the update service. Check your connection and try again.
+MSG_RESTART_FAILED=This download cannot be started again because its saved details could not be read. Nothing was removed.

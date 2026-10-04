@@ -263,6 +263,7 @@ namespace ADM.Core.BrowserMonitoring
             SingleSourceHTTPDownloadInfo? single = null;
             MultiSourceHLSDownloadInfo? hls = null;
             MultiSourceDASHDownloadInfo? dash = null;
+            var speedLimit = maxSpeedLimit == 0 ? (int?)null : maxSpeedLimit;
             lock (this)
             {
                 if (ytVideoList.TryGetValue(videoId, out var ytEntry)) dual = ytEntry.Key;
@@ -273,22 +274,22 @@ namespace ADM.Core.BrowserMonitoring
             if (dual != null)
             {
                 runtimeContext.CoreService.StartDownload(dual, name, FileNameFetchMode.ExtensionOnly,
-                        folder, startImmediately, authentication, proxyInfo, queueId, false);
+                        folder, startImmediately, authentication, proxyInfo, queueId, false, speedLimit);
             }
             else if (single != null)
             {
                 runtimeContext.CoreService.StartDownload(single, name, convertToMp3 ? FileNameFetchMode.None : FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, queueId, convertToMp3);
+                    folder, startImmediately, authentication, proxyInfo, queueId, convertToMp3, speedLimit);
             }
             else if (hls != null)
             {
                 runtimeContext.CoreService.StartDownload(hls, name, FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, queueId, false);
+                    folder, startImmediately, authentication, proxyInfo, queueId, false, speedLimit);
             }
             else if (dash != null)
             {
                 runtimeContext.CoreService.StartDownload(dash, name, FileNameFetchMode.ExtensionOnly,
-                    folder, startImmediately, authentication, proxyInfo, queueId, false);
+                    folder, startImmediately, authentication, proxyInfo, queueId, false, speedLimit);
             }
             else
             {
@@ -575,7 +576,7 @@ namespace ADM.Core.BrowserMonitoring
                     StartVideoDownload(
                         videoId, FileHelper.SanitizeFileName(name),
                         null, true, null, runtimeContext.Proxy,
-                    Helpers.GetSpeedLimit(), null);
+                    0, null);
                 }
                 else
                 {

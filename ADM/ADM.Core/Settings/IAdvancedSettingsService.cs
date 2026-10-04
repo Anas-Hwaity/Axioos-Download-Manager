@@ -19,6 +19,6 @@ namespace ADM.Core.Settings
     {
         AdvancedSettingsState Load();
         void Save(AdvancedSettingsState state);
-        void ResetFallbackUserAgent();
+        string DefaultFallbackUserAgent { get; }
     }
 }

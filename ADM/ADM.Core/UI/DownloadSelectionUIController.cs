@@ -102,7 +102,8 @@ namespace ADM.Core.UI
                 view.Authentication,
                 view.Proxy ?? preferences.DefaultProxy,
                 queueId,
-                false);
+                false,
+                NewDownloadDialogUIController.SpeedLimitChoice(view.EnableSpeedLimit, view.SpeedLimit, preferences));
         }
 
         private void DownloadSelectedItems(bool startImmediately, string? queueId)

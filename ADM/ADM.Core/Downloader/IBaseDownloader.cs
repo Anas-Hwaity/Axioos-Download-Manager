@@ -32,6 +32,9 @@ namespace ADM.Core.Downloader
         public void SetTargetDirectory(string? folder);
         public void ConfigureTransferPolicy(int? speedLimitKiB, int? maxConnections);
         public void UseCredentials(AuthenticationInfo? authentication);
+        public int SpeedLimitSetting { get; }
+        public void SetSpeedLimit(int setting);
+        public void SetMaxConnections(int? maxConnections);
         public long GetTotalDownloaded();
         public long GetDownloaded();
     }
