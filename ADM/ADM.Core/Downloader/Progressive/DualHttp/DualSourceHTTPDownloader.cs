@@ -162,7 +162,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                  catch (Exception e)
                  {
                      Log.Debug(e, e.Message);
-                     base.OnFailed(e is DownloadException ex ? ex.ErrorCode : ErrorCode.Generic);
+                     ReportFailure(e is DownloadException ex ? ex.ErrorCode : ErrorCode.Generic);
                  }
              }).Start();
         }

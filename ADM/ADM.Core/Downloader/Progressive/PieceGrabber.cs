@@ -143,10 +143,17 @@ namespace ADM.Core.Downloader.Progressive
                     return;
                 }
                 Log.Debug(e, "Error in PieceGrabber outer block");
-                if (this.pieceId != null)
+                try
                 {
-                    this.callback?.PieceDownloadFailed(this.pieceId,
-                        e is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
+                    if (this.pieceId != null)
+                    {
+                        this.callback?.PieceDownloadFailed(this.pieceId,
+                            e is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
+                    }
+                }
+                catch (Exception reportError)
+                {
+                    Log.Debug(reportError, "The failure of a piece could not be reported");
                 }
             }
         }

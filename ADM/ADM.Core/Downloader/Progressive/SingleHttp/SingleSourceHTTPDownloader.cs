@@ -146,7 +146,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                 catch (Exception e)
                 {
                     Log.Debug(e, e.Message);
-                    base.OnFailed(e is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
+                    ReportFailure(e is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
                 }
             }).Start();
         }

@@ -516,6 +516,7 @@ namespace ADM.Wpf.UI
                 case "mpegdash":
                     return "Video with separate audio";
                 case "hls":
+                case "mpd-dash":
                     return "Video stream";
                 default:
                     return "Direct link";

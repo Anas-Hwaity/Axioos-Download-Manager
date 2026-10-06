@@ -91,6 +91,8 @@ namespace ADM.Core.Downloader.Adaptive.Hls
 
         public bool IsLiveCapture => liveCapture && liveArmed;
 
+        public bool IsFinishingLiveCapture => FinishRequested && !IsCancelled;
+
         protected override bool SkipsMissingChunks => liveArmed;
 
         public bool FinishLiveCapture()

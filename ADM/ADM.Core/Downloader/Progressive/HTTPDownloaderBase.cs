@@ -50,7 +50,14 @@ namespace ADM.Core.Downloader.Progressive
         public string? TargetDir { get; set; }
         public bool IsCancelled => cancelFlag.IsCancellationRequested;
         public string? Id { get; protected set; }
-        public long FileSize => this.GetState().FileSize > 0 ? this.GetState().FileSize : totalSize;
+        public long FileSize
+        {
+            get
+            {
+                var state = this.GetState();
+                return state != null && state.FileSize > 0 ? state.FileSize : totalSize;
+            }
+        }
         public string? TargetFile
         {
             get
@@ -685,15 +692,33 @@ namespace ADM.Core.Downloader.Progressive
 
         protected virtual void OnFailed(ErrorCode error)
         {
-            if (error == ErrorCode.InvalidResponse && totalDownloadedBytes > 0)
+            try
             {
-                this.Failed?.Invoke(this, new DownloadFailedEventArgs(ErrorCode.SessionExpired));
+                if (error == ErrorCode.InvalidResponse && totalDownloadedBytes > 0)
+                {
+                    this.Failed?.Invoke(this, new DownloadFailedEventArgs(ErrorCode.SessionExpired));
+                }
+                else
+                {
+                    this.Failed?.Invoke(this, new DownloadFailedEventArgs(error));
+                }
             }
-            else
+            finally
             {
-                this.Failed?.Invoke(this, new DownloadFailedEventArgs(error));
+                Cleanup();
             }
-            Cleanup();
+        }
+
+        protected void ReportFailure(ErrorCode error)
+        {
+            try
+            {
+                OnFailed(error);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The failure of the download could not be reported");
+            }
         }
 
         protected virtual void OnAssembleProgressChanged(int progress)
@@ -716,6 +741,11 @@ namespace ADM.Core.Downloader.Progressive
                         Log.Debug("Piece " + piece.Id + " was ahead of its file on resume and was corrected");
                         piece.Downloaded = onDisk;
                         if (piece.State == SegmentState.Finished) piece.State = SegmentState.NotStarted;
+                    }
+                    else if (piece.State != SegmentState.Finished && piece.Length > 0 && piece.Downloaded == piece.Length)
+                    {
+                        Log.Debug("Piece " + piece.Id + " was complete on resume and was marked as finished");
+                        piece.State = SegmentState.Finished;
                     }
                 }
                 catch (Exception ex)

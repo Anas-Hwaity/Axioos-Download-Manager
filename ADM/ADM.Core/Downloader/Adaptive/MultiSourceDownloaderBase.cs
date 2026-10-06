@@ -33,8 +33,8 @@ namespace ADM.Core.Downloader.Adaptive
         protected CountdownLatch? countdownLatch;
         public bool IsCancelled => _cancellationTokenSource.IsCancellationRequested;
         public string Id { get; private set; }
-        public virtual long FileSize => this._state.FileSize;
-        public virtual double Duration => this._state.Duration;
+        public virtual long FileSize => this._state?.FileSize ?? -1;
+        public virtual double Duration => this._state?.Duration ?? 0.0;
         protected ReaderWriterLockSlim rwLock = new(LockRecursionPolicy.SupportsRecursion);
         public ReaderWriterLockSlim Lock => this.rwLock;
         public FileNameFetchMode FileNameFetchMode
@@ -213,13 +213,18 @@ namespace ADM.Core.Downloader.Adaptive
             }
             try
             {
-                var ranges = _chunks.Select(chunk => new DownloadRangeTelemetry(
+                var chunks = _chunks;
+                if (chunks == null)
+                {
+                    return new DownloadTransferTelemetryProjection(DownloadResumeCapability.Unknown, 0, Array.Empty<DownloadRangeTelemetry>());
+                }
+                var ranges = chunks.Select(chunk => new DownloadRangeTelemetry(
                     chunk.Offset,
                     chunk.Size > 0 ? chunk.Offset + chunk.Size - 1 : chunk.Offset,
                     chunk.Downloaded,
                     chunk.ChunkState.ToString())).ToList();
-                var active = _chunks.Count(chunk => chunk.ChunkState == ChunkState.InProgress);
-                var capability = _chunks.Count == 0 ? DownloadResumeCapability.Unknown : DownloadResumeCapability.Yes;
+                var active = chunks.Count(chunk => chunk.ChunkState == ChunkState.InProgress);
+                var capability = chunks.Count == 0 ? DownloadResumeCapability.Unknown : DownloadResumeCapability.Yes;
                 var projection = new DownloadTransferTelemetryProjection(capability, active, ranges);
                 lastTransferTelemetry = projection;
                 return projection;
@@ -282,13 +287,21 @@ namespace ADM.Core.Downloader.Adaptive
         {
             new Thread(() =>
             {
-                Directory.CreateDirectory(_state.TempDirectory);
-                ticksAtDownloadStartOrResume = Helpers.TickCount();
-                SaveState();
-                if (start)
+                try
                 {
-                    Started?.Invoke(this, EventArgs.Empty);
-                    Download();
+                    Directory.CreateDirectory(_state.TempDirectory);
+                    ticksAtDownloadStartOrResume = Helpers.TickCount();
+                    SaveState();
+                    if (start)
+                    {
+                        Started?.Invoke(this, EventArgs.Empty);
+                        Download();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "The download could not be started");
+                    if (start) ReportFailed(ex is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
                 }
             }).Start();
         }
@@ -333,8 +346,8 @@ namespace ADM.Core.Downloader.Adaptive
             {
                 try
                 {
-                    Started?.Invoke(this, EventArgs.Empty);
                     RestoreState();
+                    Started?.Invoke(this, EventArgs.Empty);
                     Directory.CreateDirectory(_state.TempDirectory);
 
                     if (_chunks == null)
@@ -358,27 +371,50 @@ namespace ADM.Core.Downloader.Adaptive
                 catch (OperationCanceledException ex)
                 {
                     Log.Debug(ex, ex.Message);
-                    ReportStopped();
+                    ReportStoppedSafely();
                 }
                 catch (FileNotFoundException ex)
                 {
                     Log.Debug(ex, ex.Message);
-                    OnFailed(new DownloadFailedEventArgs(ErrorCode.FFmpegNotFound));
+                    ReportFailed(ErrorCode.FFmpegNotFound);
                 }
                 catch (Exception ex)
                 {
                     Log.Debug(ex, ex.Message);
-                    if (ex.InnerException is HttpException he)
+                    if (ex.InnerException is HttpException)
                     {
-                        OnFailed(new DownloadFailedEventArgs(ErrorCode.InvalidResponse));
+                        ReportFailed(ErrorCode.InvalidResponse);
                     }
                     else
                     {
-                        OnFailed(new DownloadFailedEventArgs(
-                            ex is DownloadException de ? de.ErrorCode : ErrorCode.Generic));
+                        ReportFailed(ex is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
                     }
                 }
             }).Start();
+        }
+
+        private void ReportFailed(ErrorCode error)
+        {
+            try
+            {
+                OnFailed(new DownloadFailedEventArgs(error));
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The failure of the download could not be reported");
+            }
+        }
+
+        private void ReportStoppedSafely()
+        {
+            try
+            {
+                ReportStopped();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The stop of the download could not be reported");
+            }
         }
 
         protected virtual void SaveChunkState()
@@ -428,20 +464,18 @@ namespace ADM.Core.Downloader.Adaptive
             catch (OperationCanceledException ex)
             {
                 Log.Debug(ex, ex.Message);
-                ReportStopped();
+                ReportStoppedSafely();
             }
             catch (Exception ex)
             {
                 Log.Debug(ex, ex.Message);
                 if (ex.InnerException is HttpException)
                 {
-                    var he = ex.InnerException as HttpException;
-                    OnFailed(new DownloadFailedEventArgs(ErrorCode.InvalidResponse));
+                    ReportFailed(ErrorCode.InvalidResponse);
                 }
                 else
                 {
-                    OnFailed(new DownloadFailedEventArgs(
-                        ex is DownloadException de ? de.ErrorCode : ErrorCode.Generic));
+                    ReportFailed(ex is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
                 }
             }
         }
@@ -523,6 +557,11 @@ namespace ADM.Core.Downloader.Adaptive
                 catch (ArgumentOutOfRangeException ex)
                 {
                     Log.Debug(ex, "The chunk list changed while a worker was starting its next chunk");
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "A chunk worker stopped unexpectedly");
+                    if (!finishRequested && _cancelRequestor.Error == ErrorCode.None) _cancelRequestor.CancelWithFatal(ErrorCode.Generic);
                 }
                 finally
                 {
@@ -824,15 +863,21 @@ namespace ADM.Core.Downloader.Adaptive
 
         protected void OnFailed(DownloadFailedEventArgs args)
         {
-            if (args.ErrorCode == ErrorCode.InvalidResponse && totalDownloadedBytes > 0)
+            try
             {
-                Failed?.Invoke(this, new DownloadFailedEventArgs(ErrorCode.SessionExpired));
+                if (args.ErrorCode == ErrorCode.InvalidResponse && totalDownloadedBytes > 0)
+                {
+                    Failed?.Invoke(this, new DownloadFailedEventArgs(ErrorCode.SessionExpired));
+                }
+                else
+                {
+                    Failed?.Invoke(this, args);
+                }
             }
-            else
+            finally
             {
-                Failed?.Invoke(this, args);
+                Cleanup();
             }
-            Cleanup();
         }
 
         protected void OnCancelled()

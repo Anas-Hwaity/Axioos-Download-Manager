@@ -147,7 +147,17 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
 
         public void ShowProgressWindow()
         {
-            Dispatcher.BeginInvoke(new Action(() => this.Show()));
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    this.Show();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Log.Debug(ex, "The progress window was already closed");
+                }
+            }));
         }
 
         public void DownloadFailed(ErrorDetails error)
@@ -232,15 +242,22 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
 
         private void BtnPause_Click(object sender, RoutedEventArgs e)
         {
-            if (BtnPause.Tag != null)
+            try
             {
-                runtimeContext.Application.ResumeDownload(downloadId);
-                BtnPause.Content = TextResource.GetText("MENU_PAUSE");
-                BtnPause.Tag = null;
+                if (BtnPause.Tag != null)
+                {
+                    runtimeContext.Application.ResumeDownload(downloadId);
+                    BtnPause.Content = TextResource.GetText("MENU_PAUSE");
+                    BtnPause.Tag = null;
+                }
+                else
+                {
+                    StopDownload(false);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                StopDownload(false);
+                Log.Debug(ex, "The pause or resume request from the progress window failed");
             }
         }
 

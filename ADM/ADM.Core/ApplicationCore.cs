@@ -555,7 +555,11 @@ namespace ADM.Core
                 {
                     http = liveDownloads.GetValueOrDefault(id).Key;
                 }
-                if (http is MultiSourceHLSDownloader recording && recording.FinishLiveCapture()) continue;
+                if (http is MultiSourceHLSDownloader recording && (recording.FinishLiveCapture() || recording.IsFinishingLiveCapture))
+                {
+                    if (closeProgressWindow) HideProgressWindow(id);
+                    continue;
+                }
                 remaining.Add(id);
             }
             StopDownloads(remaining, closeProgressWindow);
@@ -818,6 +822,18 @@ namespace ADM.Core
         }
 
         private void PublishTelemetry(IBaseDownloader download, string lifecycleState, ProgressResultEventArgs? progress = null, string lastError = "")
+        {
+            try
+            {
+                PublishTelemetrySnapshot(download, lifecycleState, progress, lastError);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The live details of a download could not be updated");
+            }
+        }
+
+        private void PublishTelemetrySnapshot(IBaseDownloader download, string lifecycleState, ProgressResultEventArgs? progress, string lastError)
         {
             if (download == null || string.IsNullOrWhiteSpace(download.Id)) return;
             var id = download.Id;

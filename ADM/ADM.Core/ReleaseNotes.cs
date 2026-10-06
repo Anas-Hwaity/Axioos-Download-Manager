@@ -38,6 +38,8 @@ namespace ADM.Core
                 "After Axioos takes over a browser download, the browser copy is cancelled even when the first attempt fails.",
                 "Streaming downloads no longer accept short or misplaced parts, and playlists that use byte ranges are read correctly.",
                 "Live streams are recorded until they end. Pause stops the recording and saves what was captured.",
+                "Resuming a paused streaming download (HLS or MPEG-DASH) no longer closes Axioos.",
+                "A resumed download can no longer stay stuck just before the end.",
                 "Setup removes the previous version before it installs the new one. It saves a copy of your download list first and keeps your downloads, settings and logs.",
                 "Axioos keeps a log file in its data folder, limited in size, so a problem can be reported with its details.",
                 "The copy of the browser extension in the data folder is refreshed after every update."
