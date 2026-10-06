@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -22,8 +23,7 @@ namespace ADM.Core.Util
             var clean = SanitizeFileName(text) ?? fallback;
             if (clean.Length > MaxTitleLength)
             {
-                var cut = char.IsHighSurrogate(clean[MaxTitleLength - 1]) ? MaxTitleLength - 1 : MaxTitleLength;
-                clean = clean.Substring(0, cut).TrimEnd('.', ' ');
+                clean = CutAtTextElement(clean, MaxTitleLength).TrimEnd('.', ' ');
             }
             return clean.Length == 0 ? fallback : clean;
         }
@@ -38,7 +38,8 @@ namespace ADM.Core.Util
             var builder = new StringBuilder(leaf.Length);
             foreach (var c in leaf)
             {
-                if (c < 32 || c == '<' || c == '>' || c == ':' || c == '"' ||
+                if (IsDirectionControl(c)) continue;
+                if (c < 32 || (c >= 0x7F && c <= 0x9F) || c == '<' || c == '>' || c == ':' || c == '"' ||
                     c == '/' || c == '\\' || c == '|' || c == '?' || c == '*')
                 {
                     builder.Append('_');
@@ -58,9 +59,39 @@ namespace ADM.Core.Util
             if (IsReservedWindowsDeviceName(stem)) sanitized = "_" + sanitized;
 
             if (sanitized.Length > MaxSafeFileNameLength)
-                sanitized = sanitized.Substring(0, MaxSafeFileNameLength).TrimEnd('.', ' ');
+                sanitized = FitLength(sanitized, MaxSafeFileNameLength);
             if (sanitized.Length == 0) sanitized = "download";
             return sanitized;
+        }
+
+        public static bool IsDirectionControl(char c)
+        {
+            return (c >= 0x202A && c <= 0x202E) || (c >= 0x2066 && c <= 0x2069);
+        }
+
+        public static string CutAtTextElement(string text, int maxLength)
+        {
+            if (maxLength <= 0) return string.Empty;
+            if (text.Length <= maxLength) return text;
+            var starts = StringInfo.ParseCombiningCharacters(text);
+            var cut = 0;
+            foreach (var start in starts)
+            {
+                if (start > maxLength) break;
+                cut = start;
+            }
+            return text.Substring(0, cut);
+        }
+
+        public static string FitLength(string name, int maxLength)
+        {
+            if (name.Length <= maxLength) return name;
+            var dot = name.LastIndexOf('.');
+            var extension = dot > 0 && name.Length - dot <= 16 && name.IndexOf(' ', dot) < 0 ? name.Substring(dot) : string.Empty;
+            var stem = extension.Length == 0 ? name : name.Substring(0, dot);
+            var fitted = CutAtTextElement(stem, maxLength - extension.Length).TrimEnd('.', ' ');
+            if (fitted.Length == 0) return CutAtTextElement(name, maxLength).TrimEnd('.', ' ');
+            return fitted + extension;
         }
 
         private static bool IsReservedWindowsDeviceName(string stem)
@@ -146,6 +177,12 @@ namespace ADM.Core.Util
         public static string GetFileName(Uri uri, string contentType = null)
         {
             var name = Path.GetFileName(uri.LocalPath);
+            if (!string.IsNullOrEmpty(name) && (name.IndexOf('\uFFFD') >= 0 || name.IndexOf('%') >= 0))
+            {
+                var escaped = uri.AbsolutePath;
+                var repaired = ADM.Core.Clients.Http.HeaderFileNameDecoder.DecodeUrlSegment(escaped.Substring(escaped.LastIndexOf('/') + 1));
+                if (repaired != null && repaired.Length > 0) name = repaired;
+            }
             if (string.IsNullOrEmpty(name))
             {
                 name = uri.Host.Replace('.', '_');

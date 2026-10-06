@@ -10,5 +10,7 @@ namespace ADM.Core.Downloader
         public string? AttachmentName { get; set; }
         public string? ContentType { get; set; }
         public DateTime LastModified { get; set; }
+        public string? ETag { get; set; }
+        public string? LastModifiedHeader { get; set; }
     }
 }

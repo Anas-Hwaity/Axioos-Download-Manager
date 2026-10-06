@@ -41,5 +41,7 @@ namespace ADM.Core.Clients.Http
         public long GetTotalLengthFromContentRange();
 
         public long GetStartFromContentRange();
+
+        public string? GetHeader(string name);
     }
 }

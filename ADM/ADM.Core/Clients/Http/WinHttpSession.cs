@@ -21,6 +21,7 @@ namespace ADM.Core.Clients.Http
         private string? statusDescription;
         private long contentLength;
         private string contentRange;
+        private readonly Dictionary<string, string> responseHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private string? contentType;
         private string? transferEncoding;
         private string? contentEncoding;
@@ -201,6 +202,7 @@ namespace ADM.Core.Clients.Http
                 {
                     var key = line.Substring(0, index).ToLowerInvariant();
                     var value = line.Substring(index + 1).Trim();
+                    responseHeaders[key.Trim()] = value;
                     switch (key)
                     {
                         case "content-length":
@@ -240,6 +242,11 @@ namespace ADM.Core.Clients.Http
         public long GetStartFromContentRange()
         {
             return WebRequestExtensions.TryParseContentRange(contentRange, out long start, out _, out _) ? start : -1;
+        }
+
+        public string? GetHeader(string name)
+        {
+            return responseHeaders.TryGetValue(name, out var value) ? value : null;
         }
     }
 }

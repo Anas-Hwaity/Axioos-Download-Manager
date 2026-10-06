@@ -16,5 +16,8 @@ namespace ADM.Core.MediaParser.Hls
         public double Duration { get; set; }
         public Uri? KeyUrl { get; set; }
         public string? IV { get; set; }
+        public bool HasByteRange { get; set; }
+        public bool IsInitialization { get; set; }
+        public long MediaSequence { get; set; } = -1;
     }
 }

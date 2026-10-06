@@ -453,6 +453,7 @@
         choice.setAttribute("role", "menuitem");
         const title = document.createElement("span");
         title.className = "adm-media-title";
+        title.dir = "auto";
         title.textContent = typeof item?.label === "string" && item.label.trim() ? item.label.trim() : `Detected media ${index + 1}`;
         const meta = document.createElement("span");
         meta.className = "adm-media-meta";
@@ -531,6 +532,7 @@
         head.className = "adm-metadata-head";
         const heading = document.createElement("div");
         heading.className = "adm-metadata-title";
+        heading.dir = "auto";
         heading.textContent = title || "Media metadata";
         const close = document.createElement("button");
         close.type = "button";

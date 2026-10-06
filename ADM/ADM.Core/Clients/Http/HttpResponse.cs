@@ -25,6 +25,8 @@ namespace ADM.Core.Clients.Http
 
         public long ContentRangeStart => Session!.GetStartFromContentRange();
 
+        public string? GetHeader(string name) => Session!.GetHeader(name);
+
         public string ReadAsString(CancelFlag cancellationToken) => Session!.ReadAsString(cancellationToken);
 
         public Uri ResponseUri => Session!.ResponseUri;

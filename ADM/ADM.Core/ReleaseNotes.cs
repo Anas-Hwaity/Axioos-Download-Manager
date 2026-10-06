@@ -23,6 +23,25 @@ namespace ADM.Core
 
         public static IReadOnlyList<ReleaseNoteSection> Sections { get; } = new[]
         {
+            new ReleaseNoteSection("New in 1.0.4", new[]
+            {
+                "The download dashboard opens again, and it shows sizes, speeds and time left in a readable form.",
+                "File names in Arabic, Hebrew, Persian, Urdu, Chinese, Japanese, Korean, Thai, Bengali, Hindi, Russian, Greek and every other script are read correctly from the server, so they look right in the list and on disk.",
+                "Right-to-left file names keep their extension at the end, and invisible characters that can disguise a file type are removed from names.",
+                "A file name supplied by the browser, by a batch, by the command line or by Download again is kept, whether or not Axioos asks before it starts.",
+                "Analysing a page with yt-dlp works after Axioos has started with Windows.",
+                "Replacing an existing file is safe: the old file stays until the new one is complete, so pausing or cancelling no longer damages it.",
+                "Several downloads with the same name that finish together each get their own name instead of failing.",
+                "Deleting a download while it is being put together also removes its temporary data.",
+                "Resuming checks that the file on the server is still the same file. If it changed, Axioos says so instead of saving a mixed file.",
+                "Servers that hand out a file in limited slices are followed to the end, so one slice is no longer saved as the whole file.",
+                "After Axioos takes over a browser download, the browser copy is cancelled even when the first attempt fails.",
+                "Streaming downloads no longer accept short or misplaced parts, and playlists that use byte ranges are read correctly.",
+                "Live streams are recorded until they end. Pause stops the recording and saves what was captured.",
+                "Setup removes the previous version before it installs the new one. It saves a copy of your download list first and keeps your downloads, settings and logs.",
+                "Axioos keeps a log file in its data folder, limited in size, so a problem can be reported with its details.",
+                "The copy of the browser extension in the data folder is refreshed after every update."
+            }),
             new ReleaseNoteSection("New in 1.0.3", new[]
             {
                 "The speed limit now really slows a download down to the value you set. Before, a limited download could run at full speed.",

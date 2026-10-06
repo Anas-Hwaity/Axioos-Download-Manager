@@ -8,7 +8,12 @@
         AutomationProperties.AutomationId="DownloadDashboardWindow"
         Template="{StaticResource GlassWindowTemplate}">
     <Window.Resources>
-        <ResourceDictionary Source="/Resources/GlassScrollChrome.xaml"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/GlassScrollChrome.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <dashboard:DashboardTextConverter x:Key="DashboardText"/>
+        </ResourceDictionary>
     </Window.Resources>
     <Grid Margin="14">
         <Grid.RowDefinitions>
@@ -46,32 +51,32 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="{Binding Snapshot.FileName}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource GlassTextBrush}"/>
-                                <TextBlock Text="{Binding Snapshot.SourceHost, StringFormat=Host: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
-                                <TextBlock Text="{Binding Snapshot.SanitizedSourceUrl}" Foreground="{DynamicResource GlassMutedTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Snapshot.FileName, Mode=OneWay}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource GlassTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Snapshot.SourceHost, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_HOST}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                <TextBlock Text="{Binding Snapshot.SanitizedSourceUrl, Mode=OneWay}" Foreground="{DynamicResource GlassMutedTextBrush}" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
-                            <TextBlock Grid.Column="1" Text="{Binding Snapshot.Percent, StringFormat={}{0:F1}%}" FontSize="18" Foreground="{DynamicResource GlassTextBrush}" Margin="14,0,0,0"/>
-                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Height="6" Margin="0,10,0,8" Minimum="0" Maximum="100" Value="{Binding Snapshot.Percent}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Snapshot.Percent, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_PERCENT}" FontSize="18" Foreground="{DynamicResource GlassTextBrush}" Margin="14,0,0,0"/>
+                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Height="6" Margin="0,10,0,8" Minimum="0" Maximum="100" Value="{Binding Snapshot.Percent, Mode=OneWay}"/>
                             <Grid Grid.Row="2" Grid.ColumnSpan="2">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
-                                    <TextBlock Text="{Binding Snapshot.LifecycleState, StringFormat=State: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding Snapshot.DownloadedBytes, StringFormat=Downloaded: {0} B}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding Snapshot.TotalBytes, StringFormat=Total: {0} B}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.LifecycleState, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_STATE}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.DownloadedBytes, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_DOWNLOADED}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.TotalBytes, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_TOTAL}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="{Binding Snapshot.CurrentBytesPerSecond, StringFormat=Speed: {0:F0} B/s}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding Snapshot.AverageBytesPerSecond, StringFormat=Average: {0:F0} B/s}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.CurrentBytesPerSecond, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_SPEED}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.AverageBytesPerSecond, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_AVERAGE}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="{Binding Snapshot.EtaSeconds, StringFormat=ETA: {0:F0} s}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding Snapshot.ResumeCapability, StringFormat=Resume: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.EtaSeconds, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_ETA}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.ResumeCapability, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_RESUME_STATE}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="3">
-                                    <TextBlock Text="{Binding Snapshot.ActiveConnections, StringFormat=Connections: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding Snapshot.AttemptId, StringFormat=Attempt: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Snapshot.ActiveConnections, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_CONNECTIONS}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.AttemptId, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_ATTEMPT}" Foreground="{DynamicResource GlassMutedTextBrush}" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
                             </Grid>
                             <dashboard:DashboardTelemetryGraph Grid.Row="3" Grid.ColumnSpan="2" Height="90" Margin="0,10,0,0"
@@ -80,16 +85,16 @@
                             <Grid Grid.Row="4" Grid.ColumnSpan="2" Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <StackPanel>
-                                    <TextBlock Text="{Binding Snapshot.RefreshSourceState, StringFormat=Source refresh: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding Snapshot.RetryState, StringFormat=Retry: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding Snapshot.RecoveryStatus, StringFormat=Recovery: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
-                                    <TextBlock Text="{Binding Snapshot.LastError, StringFormat=Last error: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}" TextWrapping="Wrap"/>
-                                    <TextBlock Text="{Binding Snapshot.SegmentSnapshots.Count, StringFormat=Segments: {0}}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.RefreshSourceState, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_SOURCE_REFRESH}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.RetryState, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_RETRY_STATE}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.RecoveryStatus, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_RECOVERY}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
+                                    <TextBlock Text="{Binding Snapshot.LastError, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_LAST_ERROR}" Foreground="{DynamicResource GlassMutedTextBrush}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Snapshot.SegmentSnapshots.Count, Mode=OneWay, Converter={StaticResource DashboardText}, ConverterParameter=DASHBOARD_SEGMENTS}" Foreground="{DynamicResource GlassMutedTextBrush}"/>
                                     <TextBlock Text="{StaticResource DASHBOARD_ERROR_HISTORY}" Foreground="{DynamicResource GlassMutedTextBrush}" Margin="0,4,0,0"/>
                                     <ItemsControl ItemsSource="{Binding ErrorHistory}" MaxHeight="72">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding}" Foreground="{DynamicResource GlassMutedTextBrush}" TextWrapping="Wrap" Margin="8,1,0,0"/>
+                                                <TextBlock Text="{Binding Mode=OneWay}" Foreground="{DynamicResource GlassMutedTextBrush}" TextWrapping="Wrap" Margin="8,1,0,0"/>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>

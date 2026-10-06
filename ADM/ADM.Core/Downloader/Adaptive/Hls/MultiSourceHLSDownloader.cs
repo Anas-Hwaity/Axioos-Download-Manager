@@ -17,6 +17,15 @@ namespace ADM.Core.Downloader.Adaptive.Hls
     public class MultiSourceHLSDownloader : MultiSourceDownloaderBase
     {
         private CountdownLatch? initLatch;
+        private const string LiveMarkerName = "live-capture";
+        private const int LiveRefreshFailureLimit = 5;
+        private const int LiveIdleLimitMilliseconds = 30000;
+        private volatile bool liveCapture;
+        private volatile bool liveArmed;
+        private double liveTargetDuration;
+        private readonly Dictionary<int, long> lastMediaSequence = new Dictionary<int, long>();
+        private readonly Dictionary<int, string> lastInitializationKey = new Dictionary<int, string>();
+        private readonly ManualResetEvent liveWait = new ManualResetEvent(false);
         public override string Type => "Hls";
         public override Uri PrimaryUrl
         {
@@ -76,7 +85,238 @@ namespace ADM.Core.Downloader.Adaptive.Hls
         public override void Stop()
         {
             this.initLatch?.Break();
+            ReleaseLiveWait();
             base.Stop();
+        }
+
+        public bool IsLiveCapture => liveCapture && liveArmed;
+
+        protected override bool SkipsMissingChunks => liveArmed;
+
+        public bool FinishLiveCapture()
+        {
+            if (!liveCapture || !liveArmed || IsCancelled || FinishRequested) return false;
+            Log.Debug("Finishing the live recording with what was captured so far");
+            RequestFinish();
+            ReleaseLiveWait();
+            return true;
+        }
+
+        private void ReleaseLiveWait()
+        {
+            try
+            {
+                liveWait.Set();
+            }
+            catch (ObjectDisposedException ex)
+            {
+                Log.Debug(ex, "The live refresh wait was already released");
+            }
+        }
+
+        private static int StreamIndexOf(string playlistKey)
+        {
+            return playlistKey == "audio" ? 1 : 0;
+        }
+
+        private static string InitializationKey(HlsMediaSegment segment)
+        {
+            return segment.Url + "|" + segment.ByteRange.Key + "|" + segment.ByteRange.Value + "|" + segment.HasByteRange;
+        }
+
+        private void TrackLiveState(Dictionary<string, HlsPlaylist> playlists)
+        {
+            var live = false;
+            liveTargetDuration = 0.0;
+            foreach (var pair in playlists)
+            {
+                var streamIndex = StreamIndexOf(pair.Key);
+                var playlist = pair.Value;
+                var segments = playlist.MediaSegments;
+                if (segments == null) continue;
+                if (playlist.IsEndless) live = true;
+                if (playlist.TargetDuration > liveTargetDuration) liveTargetDuration = playlist.TargetDuration;
+                foreach (var segment in segments)
+                {
+                    if (segment.IsInitialization) lastInitializationKey[streamIndex] = InitializationKey(segment);
+                    else lastMediaSequence[streamIndex] = segment.MediaSequence;
+                }
+            }
+            liveCapture = live;
+        }
+
+        private void ArmLiveCapture()
+        {
+            liveArmed = true;
+            try
+            {
+                File.WriteAllText(Path.Combine(this._state.TempDirectory, LiveMarkerName), "live");
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Log.Debug(ex, "The live recording marker could not be written");
+            }
+        }
+
+        private void RemoveLiveMarker()
+        {
+            try
+            {
+                File.Delete(Path.Combine(this._state.TempDirectory, LiveMarkerName));
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Log.Debug(ex, "The live recording marker could not be removed");
+            }
+        }
+
+        private string? FetchPlaylistText(Uri uri)
+        {
+            try
+            {
+                var request = _http.CreateGetRequest(uri, this._state.Headers, this._state.Cookies, this._state.Authentication);
+                using var response = _http.Send(request);
+                response.EnsureSuccessStatusCode();
+                return response.ReadAsString(this._cancellationTokenSource);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The live playlist could not be refreshed");
+                return null;
+            }
+        }
+
+        private Dictionary<string, HlsPlaylist>? RefreshPlaylists()
+        {
+            var state = this._state as MultiSourceHLSDownloadState;
+            if (state == null) return null;
+            var sources = new List<KeyValuePair<string, Uri>>();
+            if (state.Demuxed)
+            {
+                sources.Add(new KeyValuePair<string, Uri>("video", state.NonMuxedVideoPlaylistUrl));
+                sources.Add(new KeyValuePair<string, Uri>("audio", state.NonMuxedAudioPlaylistUrl));
+            }
+            else
+            {
+                sources.Add(new KeyValuePair<string, Uri>("muxed", state.MuxedPlaylistUrl));
+            }
+            var playlists = new Dictionary<string, HlsPlaylist>();
+            foreach (var source in sources)
+            {
+                var text = FetchPlaylistText(source.Value);
+                if (text == null) return null;
+                HlsPlaylist? playlist;
+                try
+                {
+                    playlist = HlsParser.ParseMediaSegments(text.Split('\n'), source.Value.ToString());
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "The refreshed live playlist could not be read");
+                    return null;
+                }
+                if (playlist == null) return null;
+                playlists[source.Key] = playlist;
+            }
+            return playlists;
+        }
+
+        private int AppendNewSegments(Dictionary<string, HlsPlaylist> playlists)
+        {
+            var added = 0;
+            try
+            {
+                rwLock.EnterWriteLock();
+                foreach (var pair in playlists)
+                {
+                    var streamIndex = StreamIndexOf(pair.Key);
+                    var segments = pair.Value.MediaSegments;
+                    if (segments == null) continue;
+                    var prefix = streamIndex == 0 ? "1_" : "2_";
+                    if (!lastMediaSequence.TryGetValue(streamIndex, out var lastSequence)) lastSequence = -1;
+                    lastInitializationKey.TryGetValue(streamIndex, out string? lastKey);
+                    HlsMediaSegment? pendingInitialization = null;
+                    foreach (var segment in segments)
+                    {
+                        if (segment.IsInitialization)
+                        {
+                            pendingInitialization = InitializationKey(segment) == lastKey ? null : segment;
+                            continue;
+                        }
+                        if (segment.MediaSequence <= lastSequence) continue;
+                        if (pendingInitialization != null)
+                        {
+                            AddLiveChunk(pendingInitialization, streamIndex, prefix);
+                            lastKey = InitializationKey(pendingInitialization);
+                            pendingInitialization = null;
+                        }
+                        AddLiveChunk(segment, streamIndex, prefix);
+                        lastSequence = segment.MediaSequence;
+                        added++;
+                    }
+                    lastMediaSequence[streamIndex] = lastSequence;
+                    if (lastKey != null) lastInitializationKey[streamIndex] = lastKey;
+                    if (streamIndex == 0) this._state.VideoChunkCount = _chunks.Count(chunk => chunk.StreamIndex == 0);
+                    else this._state.AudioChunkCount = _chunks.Count(chunk => chunk.StreamIndex == 1);
+                }
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
+            return added;
+        }
+
+        private void AddLiveChunk(HlsMediaSegment segment, int streamIndex, string prefix)
+        {
+            var chunk = CreateChunk(segment, streamIndex);
+            _chunks.Add(chunk);
+            _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(this._state.TempDirectory, prefix + chunk.Id + FileHelper.GetFileName(chunk.Uri));
+        }
+
+        protected override bool ExtendChunks()
+        {
+            if (!liveCapture) return false;
+            if (!liveArmed) ArmLiveCapture();
+            var idleSince = Helpers.TickCount();
+            var failures = 0;
+            var waitMilliseconds = (int)Math.Max(1000.0, Math.Min(15000.0, liveTargetDuration > 0 ? liveTargetDuration * 1000.0 : 5000.0));
+            var idleLimit = Math.Max(LiveIdleLimitMilliseconds, 4 * waitMilliseconds);
+            while (!this._cancellationTokenSource.IsCancellationRequested && !FinishRequested)
+            {
+                liveWait.WaitOne(waitMilliseconds);
+                if (this._cancellationTokenSource.IsCancellationRequested || FinishRequested) break;
+                var playlists = RefreshPlaylists();
+                if (this._cancellationTokenSource.IsCancellationRequested || FinishRequested) break;
+                if (playlists == null)
+                {
+                    failures++;
+                    if (failures >= LiveRefreshFailureLimit)
+                    {
+                        Log.Debug("The live playlist stopped answering, saving what was recorded");
+                        liveCapture = false;
+                        return false;
+                    }
+                    continue;
+                }
+                failures = 0;
+                var added = AppendNewSegments(playlists);
+                var ended = playlists.Values.All(playlist => !playlist.IsEndless);
+                if (ended)
+                {
+                    liveCapture = false;
+                    RemoveLiveMarker();
+                }
+                if (added > 0) return true;
+                if (ended) return false;
+                if (Helpers.TickCount() - idleSince > idleLimit)
+                {
+                    Log.Debug("The live playlist stopped growing, saving what was recorded");
+                    liveCapture = false;
+                    return false;
+                }
+            }
+            return false;
         }
 
         private Dictionary<string, HlsPlaylist> ProbeTarget()
@@ -252,23 +492,23 @@ namespace ADM.Core.Downloader.Adaptive.Hls
 
                 for (; i < Math.Min(this._state.AudioChunkCount, this._state.VideoChunkCount); i++)
                 {
-                    var chunk1 = CreateChunk(video.MediaSegments[i], video.HasByteRange, 0);
+                    var chunk1 = CreateChunk(video.MediaSegments[i], 0);
                     _chunks.Add(chunk1);
                     _chunkStreamMap.StreamMap[chunk1.Id] = Path.Combine(tempDir, "1_" + chunk1.Id + FileHelper.GetFileName(chunk1.Uri));
 
-                    var chunk2 = CreateChunk(audio.MediaSegments[i], audio.HasByteRange, 1);
+                    var chunk2 = CreateChunk(audio.MediaSegments[i], 1);
                     _chunks.Add(chunk2);
                     _chunkStreamMap.StreamMap[chunk2.Id] = Path.Combine(tempDir, "2_" + chunk2.Id + FileHelper.GetFileName(chunk2.Uri));
                 }
                 for (; i < this._state.VideoChunkCount; i++)
                 {
-                    var chunk = CreateChunk(video.MediaSegments[i], video.HasByteRange, 0);
+                    var chunk = CreateChunk(video.MediaSegments[i], 0);
                     _chunks.Add(chunk);
                     _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(tempDir, "1_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 }
                 for (; i < this._state.AudioChunkCount; i++)
                 {
-                    var chunk = CreateChunk(audio.MediaSegments[i], audio.HasByteRange, 1);
+                    var chunk = CreateChunk(audio.MediaSegments[i], 1);
                     _chunks.Add(chunk);
                     _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(tempDir, "2_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 }
@@ -282,14 +522,15 @@ namespace ADM.Core.Downloader.Adaptive.Hls
 
                 for (; i < this._state.VideoChunkCount; i++)
                 {
-                    var chunk = CreateChunk(playlist.MediaSegments[i], playlist.HasByteRange, 0);
+                    var chunk = CreateChunk(playlist.MediaSegments[i], 0);
                     _chunks.Add(chunk);
                     _chunkStreamMap.StreamMap[chunk.Id] = Path.Combine(tempDir, "1_" + chunk.Id + FileHelper.GetFileName(chunk.Uri));
                 }
             }
+            TrackLiveState(playlists);
         }
 
-        private MultiSourceChunk CreateChunk(HlsMediaSegment mediaSegment, bool hasByteRange, int streamIndex)
+        private MultiSourceChunk CreateChunk(HlsMediaSegment mediaSegment, int streamIndex)
         {
             Log.Debug(streamIndex + "-Url: " + SensitiveDataRedactor.UrlForLog(mediaSegment.Url?.ToString()));
             return new MultiSourceChunk
@@ -297,8 +538,8 @@ namespace ADM.Core.Downloader.Adaptive.Hls
                 Uri = mediaSegment.Url,
                 ChunkState = ChunkState.Ready,
                 Id = Guid.NewGuid().ToString(),
-                Offset = hasByteRange ? mediaSegment.ByteRange.Key : 0,
-                Size = hasByteRange ? mediaSegment.ByteRange.Value : -1,
+                Offset = mediaSegment.HasByteRange ? mediaSegment.ByteRange.Key : 0,
+                Size = mediaSegment.HasByteRange && mediaSegment.ByteRange.Value > 0 ? mediaSegment.ByteRange.Value : -1,
                 Duration = mediaSegment.Duration,
                 StreamIndex = streamIndex
             };
@@ -331,6 +572,16 @@ namespace ADM.Core.Downloader.Adaptive.Hls
                     TempFilePath = Path.Combine(hlsDir, (c.StreamIndex == 0 ? "1_" : "2_") + c.Id + FileHelper.GetFileName(c.Uri))
                 }).ToDictionary(e => e.Id, e => e.TempFilePath);
                 _chunkStreamMap = new SimpleStreamMap { StreamMap = streamMap };
+
+                if (File.Exists(Path.Combine(hlsDir, LiveMarkerName)))
+                {
+                    var captured = LeadingFinishedChunks(_chunks, new List<MultiSourceChunk>());
+                    if (captured.Count > 0 && captured.Count < _chunks.Count)
+                    {
+                        Log.Debug("Resuming a live recording, saving the " + captured.Count + " parts that were captured");
+                        _chunks = captured;
+                    }
+                }
 
                 var count = 0;
                 totalDownloadedBytes = 0;

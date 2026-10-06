@@ -55,6 +55,24 @@ function eraseDownload(downloads, id) {
   });
 }
 
+function downloadStopped(downloads, id, cancelSucceeded) {
+  return new Promise(resolve => {
+    if (typeof downloads?.search !== "function") {
+      resolve(cancelSucceeded);
+      return;
+    }
+    try {
+      downloads.search({ id }, items => {
+        if (globalThis.chrome?.runtime?.lastError || !Array.isArray(items)) {
+          resolve(cancelSucceeded);
+          return;
+        }
+        resolve(items.length === 0 || items[0]?.state !== "in_progress");
+      });
+    } catch { resolve(cancelSucceeded); }
+  });
+}
+
 function downloadIsGone(downloads, id) {
   return new Promise(resolve => {
     if (typeof downloads?.search !== "function") {
@@ -184,7 +202,7 @@ export default class TakeoverOrphanStore {
         continue;
       }
       if (record?.durableAccepted === true) {
-        if (await cancelDownload(this.downloads, id)) {
+        if (await downloadStopped(this.downloads, id, await cancelDownload(this.downloads, id))) {
           await eraseDownload(this.downloads, id);
           delete records[key];
           cancelled += 1;

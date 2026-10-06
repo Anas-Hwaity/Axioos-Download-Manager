@@ -42,7 +42,9 @@ namespace YDLWrapper
                     RedirectStandardInput = false,
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    StandardOutputEncoding = Encoding.UTF8
+                    StandardOutputEncoding = Encoding.UTF8,
+                    StandardErrorEncoding = Encoding.UTF8,
+                    WorkingDirectory = PrepareWorkingDirectory()
                 };
                 using var process = Process.Start(startInfo);
                 if (process == null) return null;
@@ -81,9 +83,11 @@ namespace YDLWrapper
         {
             errorBuffer.Clear();
             var exec = FindYDLBinary();
+            var workFolder = PrepareWorkingDirectory();
             var pb = new ProcessStartInfo
             {
                 FileName = exec.Path,
+                WorkingDirectory = workFolder,
             };
 
             var sb = new StringBuilder();
@@ -92,6 +96,17 @@ namespace YDLWrapper
                 "--socket-timeout", "15", "--retries", "2", "--extractor-retries", "2" })
             {
                 ProcessArgumentEncoder.AppendArgument(sb, arg);
+            }
+
+            ProcessArgumentEncoder.AppendArgument(sb, "--encoding");
+            ProcessArgumentEncoder.AppendArgument(sb, "utf-8");
+
+            if (exec.BinaryType == YtBinaryType.YtDlp)
+            {
+                ProcessArgumentEncoder.AppendArgument(sb, "--paths");
+                ProcessArgumentEncoder.AppendArgument(sb, "temp:" + workFolder);
+                ProcessArgumentEncoder.AppendArgument(sb, "--paths");
+                ProcessArgumentEncoder.AppendArgument(sb, "home:" + workFolder);
             }
 
             if (exec.BinaryType == YtBinaryType.YtDlp && FindBundledJsRuntime(exec.Path) is string jsRuntime)
@@ -134,6 +149,7 @@ namespace YDLWrapper
             pb.RedirectStandardError = true;
             pb.RedirectStandardInput = false;
             pb.StandardOutputEncoding = Encoding.UTF8;
+            pb.StandardErrorEncoding = Encoding.UTF8;
             JsonOutputFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
             Log.Debug("Opening temporary yt-dlp metadata file");
             using var fs = new FileStream(JsonOutputFile,
@@ -226,6 +242,24 @@ namespace YDLWrapper
                 ydlProc?.Dispose();
                 ydlProc = null;
             }
+        }
+
+        internal static string PrepareWorkingDirectory()
+        {
+            foreach (var root in new string[] { Path.GetTempPath(), Config.AppDir })
+            {
+                try
+                {
+                    var folder = Path.Combine(root, "Axioos-analysis").TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    Directory.CreateDirectory(folder);
+                    return folder;
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is NotSupportedException)
+                {
+                    Log.Debug(ex, "yt-dlp working folder could not be prepared");
+                }
+            }
+            return Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
 
         internal static string? FindBundledJsRuntime(string ytDlpPath)

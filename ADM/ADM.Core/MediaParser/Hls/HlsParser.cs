@@ -1,6 +1,7 @@
 ﻿using ADM.Core.MediaParser.Util;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 #if !NET5_0_OR_GREATER
 using ADM.Compatibility;
@@ -20,14 +21,20 @@ namespace ADM.Core.MediaParser.Hls
         public static readonly string EXT_X_KEY = "#EXT-X-KEY:";
         public static readonly string EXT_X_MAP = "#EXT-X-MAP:";
         public static readonly string EXT_X_I_FRAMES_ONLY = "#EXT-X-I-FRAMES-ONLY:";
+        public const string ExtXEndList = "#EXT-X-ENDLIST";
+        public const string ExtXTargetDuration = "#EXT-X-TARGETDURATION:";
+        public const string ExtXPlaylistType = "#EXT-X-PLAYLIST-TYPE:";
 
         public static HlsPlaylist ParseMediaSegments(IEnumerable<string> manifestLines, string playlistUrl)
         {
             var mediaSegments = new List<HlsMediaSegment>();
             var mediaSequence = 0L;
-            var startOffset = 0L;
-            var segmentLength = 0L;
-            var segmentEndOffset = 0L;
+            long? pendingRangeLength = null;
+            long? pendingRangeOffset = null;
+            Uri? previousRangeUrl = null;
+            var previousRangeEnd = 0L;
+            var endListSeen = false;
+            var targetDuration = 0.0;
             var duration = 0.0;
             var totalDuration = 0.0;
             var hasByteRange = false;
@@ -59,13 +66,30 @@ namespace ADM.Core.MediaParser.Hls
                 if (line[0] != '#')
                 {
                     var url = UrlResolver.Resolve(baseUrl, line);
-                    mediaSegments.Add(new HlsMediaSegment(url)
+                    var mediaSegment = new HlsMediaSegment(url)
                     {
-                        ByteRange = new KeyValuePair<long, long>(startOffset, segmentLength),
+                        ByteRange = new KeyValuePair<long, long>(0, 0),
                         Duration = duration,
                         KeyUrl = keyUrl,
-                        IV = iv
-                    });
+                        IV = iv,
+                        MediaSequence = mediaSequence
+                    };
+                    if (pendingRangeLength.HasValue)
+                    {
+                        var rangeStart = ResolveRangeStart(pendingRangeOffset, previousRangeUrl, previousRangeEnd, url);
+                        mediaSegment.ByteRange = new KeyValuePair<long, long>(rangeStart, pendingRangeLength.Value);
+                        mediaSegment.HasByteRange = true;
+                        previousRangeUrl = url;
+                        previousRangeEnd = checked(rangeStart + pendingRangeLength.Value);
+                    }
+                    else
+                    {
+                        previousRangeUrl = null;
+                        previousRangeEnd = 0L;
+                    }
+                    pendingRangeLength = null;
+                    pendingRangeOffset = null;
+                    mediaSegments.Add(mediaSegment);
                     mediaSequence++;
                     totalDuration += duration;
                 }
@@ -77,31 +101,33 @@ namespace ADM.Core.MediaParser.Hls
                 {
                     hasByteRange = true;
                     var attrList = line.Substring(EXT_X_BYTERANGE.Length).Trim();
-                    var kv = ParseByteRange(attrList);
-                    long offset = kv.Key;
-                    long length = kv.Value;
-                    if (offset > 0)
-                    {
-                        startOffset = offset;
-                    }
-                    else
-                    {
-                        startOffset = segmentEndOffset;
-                    }
-                    segmentLength = length;
-                    segmentEndOffset += segmentLength;
+                    ParseByteRange(attrList, out var rangeLength, out var rangeOffset);
+                    pendingRangeLength = rangeLength;
+                    pendingRangeOffset = rangeOffset;
+                }
+                else if (line.StartsWith(ExtXEndList))
+                {
+                    endListSeen = true;
+                }
+                else if (line.StartsWith(ExtXTargetDuration))
+                {
+                    double.TryParse(line.Substring(ExtXTargetDuration.Length).Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out targetDuration);
+                }
+                else if (line.StartsWith(ExtXPlaylistType))
+                {
+                    if (line.Substring(ExtXPlaylistType.Length).Trim().Equals("VOD", StringComparison.OrdinalIgnoreCase)) endListSeen = true;
                 }
                 else if (line.StartsWith(EXTINF))
                 {
                     var attrs = line.Substring(EXTINF.Length).Trim();
                     if (attrs.Length > 0)
                     {
-                        duration = Double.Parse(attrs.Split(',')[0]);
+                        if (!double.TryParse(attrs.Split(',')[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out duration)) duration = 0.0;
                     }
                 }
                 else if (line.StartsWith(EXT_X_MEDIA_SEQUENCE))
                 {
-                    mediaSequence = Int32.Parse(line.Substring(EXT_X_MEDIA_SEQUENCE.Length).Trim());
+                    mediaSequence = long.Parse(line.Substring(EXT_X_MEDIA_SEQUENCE.Length).Trim(), CultureInfo.InvariantCulture);
                 }
                 else if (line.StartsWith(EXT_X_KEY))
                 {
@@ -125,13 +151,21 @@ namespace ADM.Core.MediaParser.Hls
                     var encAttrs = HlsHelper.ParseAttributes(line.Substring(EXT_X_MAP.Length));
                     if (encAttrs.ContainsKey("URI"))
                     {
-                        mediaSegments.Add(new HlsMediaSegment(UrlResolver.Resolve(baseUrl, encAttrs["URI"]))
+                        var mapSegment = new HlsMediaSegment(UrlResolver.Resolve(baseUrl, encAttrs["URI"]))
                         {
-                            ByteRange = encAttrs.ContainsKey("BYTERANGE") ? ParseByteRange(encAttrs["BYTERANGE"]) : new KeyValuePair<long, long>(0, 0),
+                            ByteRange = new KeyValuePair<long, long>(0, 0),
                             Duration = 0,
                             KeyUrl = keyUrl,
-                            IV = iv
-                        });
+                            IV = iv,
+                            IsInitialization = true
+                        };
+                        if (encAttrs.ContainsKey("BYTERANGE"))
+                        {
+                            ParseByteRange(encAttrs["BYTERANGE"], out var mapLength, out var mapOffset);
+                            mapSegment.ByteRange = new KeyValuePair<long, long>(mapOffset ?? 0L, mapLength);
+                            mapSegment.HasByteRange = true;
+                        }
+                        mediaSegments.Add(mapSegment);
                     }
                 }
             }
@@ -144,7 +178,9 @@ namespace ADM.Core.MediaParser.Hls
                     HasByteRange = hasByteRange,
                     IsEncrypted = isEncrypted,
                     TotalDuration = totalDuration,
-                    IsKeyIFrameOnly = keyFrameOnly
+                    IsKeyIFrameOnly = keyFrameOnly,
+                    IsEndless = !endListSeen,
+                    TargetDuration = targetDuration
                 };
             }
 
@@ -254,16 +290,26 @@ namespace ADM.Core.MediaParser.Hls
             return dict;
         }
 
-        private static KeyValuePair<long, long> ParseByteRange(string str)
+        public static long ResolveRangeStart(long? explicitOffset, Uri? previousRangeUrl, long previousRangeEnd, Uri url)
         {
-            long offset = 0, length;
-            var attrs = str.Split('@');
-            length = Int32.Parse(attrs[0]);
-            if (attrs.Length == 2)
+            if (explicitOffset.HasValue) return explicitOffset.Value;
+            if (previousRangeUrl != null && previousRangeUrl.Equals(url)) return previousRangeEnd;
+            return 0L;
+        }
+
+        public static void ParseByteRange(string str, out long length, out long? offset)
+        {
+            var attrs = str.Trim().Trim('"').Split('@');
+            length = long.Parse(attrs[0].Trim(), CultureInfo.InvariantCulture);
+            offset = null;
+            if (attrs.Length >= 2)
             {
-                offset = Int32.Parse(attrs[1]);
+                offset = long.Parse(attrs[1].Trim(), CultureInfo.InvariantCulture);
             }
-            return new KeyValuePair<long, long>(offset, length);
+            if (length < 0 || (offset.HasValue && offset.Value < 0))
+            {
+                throw new FormatException("Byte range values cannot be negative");
+            }
         }
     }
 }

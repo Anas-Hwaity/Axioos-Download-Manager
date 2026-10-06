@@ -39,6 +39,13 @@ namespace ADM.Core
         public static string DataDir { get; set; }
         public static string AppDir { get; set; }
 
+        public static string EnsureDataFolder()
+        {
+            var loaded = Instance;
+            var folder = AppDir;
+            return loaded == null || folder == null ? string.Empty : folder;
+        }
+
         public static int DefaultNotificationTimeOut => 30000;
 
         public int NotificationTimeOut { get; set; }

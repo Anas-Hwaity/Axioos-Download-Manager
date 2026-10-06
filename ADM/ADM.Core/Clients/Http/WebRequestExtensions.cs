@@ -107,26 +107,13 @@ namespace ADM.Core.Clients.Http
             return GetContentDispositionFileName(response.Headers.Get("Content-Disposition"));
         }
 
-        public static string? GetContentDispositionFileName(string contentDisposition)
+        public static string? GetContentDispositionFileName(string? contentDisposition)
         {
             try
             {
-                var r1 = new Regex(@"\s*filename\*\s*=\s*[^']*\'\s*\'(.*)");
-                var r2 = new Regex("\\s*filename\\s*=\\s*\"([^\"]*)\"");
-                var r3 = new Regex("filename\\s*=\\s*([^\"]+)");
-
-                if (contentDisposition != null)
-                {
-                    Log.Debug("Trying to derive filename from Content-Disposition");
-                    foreach (var r in new Regex[] { r1, r2, r3 })
-                    {
-                        var m = r.Match(contentDisposition);
-                        if (m.Success && m.Groups.Count >= 2)
-                        {
-                            return FileHelper.SanitizeFileName(Uri.UnescapeDataString(m.Groups[1].Value));
-                        }
-                    }
-                }
+                if (contentDisposition == null) return null;
+                Log.Debug("Trying to derive filename from Content-Disposition");
+                return HeaderFileNameDecoder.Decode(contentDisposition);
             }
             catch (Exception ex)
             {

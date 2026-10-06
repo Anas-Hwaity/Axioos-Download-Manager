@@ -58,6 +58,7 @@ export default class App {
         this.takeoverTransaction = new DownloadTakeoverTransaction(chrome.downloads, this.takeoverOrphans, this.connector,
             { enrich: download => this.takeoverSessionMaterial(download) });
         this.takeoverInFlight = new Set();
+        this.browserCopyWarning = false;
     }
 
     start() {
@@ -354,6 +355,7 @@ export default class App {
             this.takeoverInFlight.add(download.id);
             void this.takeoverTransaction.execute(download, payload).then(result => {
                 if (!result.accepted && result.reason === "TransportFailure") this.showDesktopUnavailable();
+                if (result.accepted && result.browserCleanupPending) this.retryBrowserCopyCleanup(download.id);
             }).catch(() => {
                 this.showDesktopUnavailable();
             }).finally(() => {
@@ -486,6 +488,7 @@ export default class App {
             }
         }
         chrome.action.setBadgeText({ text: vc });
+        if (this.browserCopyWarning) this.showBrowserCopyStillRunning();
         if (!this.connector.isConnected()) {
             this.logger.log("Not connected...");
             if (this.visibleBrowserMediaForTab(this.activeTabId).length > 0) {
@@ -682,6 +685,50 @@ export default class App {
 
     diconnect() {
         this.onDisconnect();
+    }
+
+    retryBrowserCopyCleanup(browserDownloadId, attempt = 0) {
+        const delays = [5000, 15000];
+        if (!Number.isInteger(browserDownloadId)) return;
+        if (attempt >= delays.length) {
+            this.browserCopyWarning = true;
+            this.showBrowserCopyStillRunning();
+            setTimeout(() => {
+                this.browserCopyWarning = false;
+                try {
+                    if (chrome.action.setTitle) chrome.action.setTitle({ title: "" });
+                    this.updateActionIcon();
+                } catch { }
+            }, 60000);
+            return;
+        }
+        setTimeout(() => {
+            void this.takeoverTransaction.completeBrowserCleanup(browserDownloadId).then(done => {
+                if (done) {
+                    this.browserCopyWarning = false;
+                    try {
+                        if (chrome.action.setTitle) chrome.action.setTitle({ title: "" });
+                    } catch { }
+                    this.updateActionIcon();
+                    return;
+                }
+                this.retryBrowserCopyCleanup(browserDownloadId, attempt + 1);
+            }).catch(() => {
+                this.retryBrowserCopyCleanup(browserDownloadId, attempt + 1);
+            });
+        }, delays[attempt]);
+    }
+
+    showBrowserCopyStillRunning() {
+        try {
+            chrome.action.setBadgeText({ text: "!" });
+            if (chrome.action.setBadgeBackgroundColor) {
+                chrome.action.setBadgeBackgroundColor({ color: "#C62828" });
+            }
+            if (chrome.action.setTitle) {
+                chrome.action.setTitle({ title: "Axioos took over a download, but the browser copy could not be cancelled. Cancel it in the browser's download list." });
+            }
+        } catch { }
     }
 
     showDesktopUnavailable() {

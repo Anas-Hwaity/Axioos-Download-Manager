@@ -68,6 +68,111 @@ namespace ADM.Core.Downloader.Adaptive
         private bool stopRequested = false;
         private bool assembled;
         private string? partialOutput;
+        private string? reservedOutput;
+        private volatile bool finishRequested;
+
+        protected bool FinishRequested => finishRequested;
+
+        protected virtual bool ExtendChunks()
+        {
+            return false;
+        }
+
+        protected virtual bool SkipsMissingChunks => false;
+
+        protected static List<MultiSourceChunk> LeadingFinishedChunks(List<MultiSourceChunk> chunks, List<MultiSourceChunk> dropped)
+        {
+            var kept = new List<MultiSourceChunk>(chunks.Count);
+            var closedStreams = new HashSet<int>();
+            foreach (var chunk in chunks)
+            {
+                if (closedStreams.Contains(chunk.StreamIndex))
+                {
+                    dropped.Add(chunk);
+                }
+                else if (chunk.ChunkState != ChunkState.Finished)
+                {
+                    closedStreams.Add(chunk.StreamIndex);
+                    dropped.Add(chunk);
+                }
+                else
+                {
+                    kept.Add(chunk);
+                }
+            }
+            return kept;
+        }
+
+        protected void RequestFinish()
+        {
+            finishRequested = true;
+            _cancelRequestor.CancelAll();
+            try
+            {
+                this.countdownLatch?.Break();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "The chunk wait could not be released for finishing");
+            }
+        }
+
+        private void DropUnfinishedChunks()
+        {
+            var dropped = new List<MultiSourceChunk>();
+            try
+            {
+                rwLock.EnterWriteLock();
+                var kept = LeadingFinishedChunks(_chunks, dropped);
+                _chunks.Clear();
+                _chunks.AddRange(kept);
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
+            foreach (var chunk in dropped)
+            {
+                try
+                {
+                    File.Delete(_chunkStreamMap.GetStream(chunk.Id));
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "An unfinished part of a stopped recording could not be removed");
+                }
+            }
+            if (_chunks.Count == 0) throw new OperationCanceledException();
+            SaveChunkState();
+        }
+
+        private void RefetchDamagedChunks()
+        {
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                if (_cancellationTokenSource.IsCancellationRequested || finishRequested) return;
+                if (!MarkDamagedChunks()) return;
+                DownloadChunks();
+            }
+        }
+
+        private bool MarkDamagedChunks()
+        {
+            var damaged = false;
+            foreach (var chunk in _chunks)
+            {
+                if (chunk.Size <= 0) continue;
+                var file = new FileInfo(_chunkStreamMap.GetStream(chunk.Id));
+                var length = file.Exists ? file.Length : 0L;
+                if (length == chunk.Size) continue;
+                Log.Debug("A saved part has " + length + " bytes but should have " + chunk.Size + ", it will be fetched again");
+                chunk.Downloaded = length < chunk.Size ? length : 0L;
+                chunk.ChunkState = ChunkState.Ready;
+                damaged = true;
+            }
+            if (damaged) SaveChunkState();
+            return damaged;
+        }
         private int? configuredMaxConnections;
 
         private AuthenticationInfo? resumeAuthentication;
@@ -242,6 +347,7 @@ namespace ADM.Core.Downloader.Adaptive
                     this._http.Timeout = TimeSpan.FromSeconds(Config.Instance.NetworkTimeout);
 
                     DownloadChunks();
+                    RefetchDamagedChunks();
 
                     this._cancellationTokenSource.ThrowIfCancellationRequested();
 
@@ -302,11 +408,18 @@ namespace ADM.Core.Downloader.Adaptive
                 SaveState();
                 OnProbe();
                 DownloadChunks();
+                while (!_cancellationTokenSource.IsCancellationRequested && !finishRequested && ExtendChunks())
+                {
+                    DownloadChunks();
+                }
 
                 if (_cancellationTokenSource.IsCancellationRequested)
                 {
                     throw new OperationCanceledException();
                 }
+
+                if (finishRequested) DropUnfinishedChunks();
+                RefetchDamagedChunks();
 
                 Assemble();
                 EnsureAssembled();
@@ -347,19 +460,32 @@ namespace ADM.Core.Downloader.Adaptive
         private void EnsureAssembled()
         {
             if (assembled) return;
-            var partial = partialOutput;
-            if (partial != null)
-            {
-                try
-                {
-                    File.Delete(partial);
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "The unfinished output file could not be removed");
-                }
-            }
+            DiscardPartialOutput();
             throw new OperationCanceledException();
+        }
+
+        private void DiscardPartialOutput()
+        {
+            var staging = partialOutput;
+            var reserved = reservedOutput;
+            partialOutput = null;
+            reservedOutput = null;
+            OutputFileStaging.Discard(staging, reserved);
+            if (reserved != null) OutputFileStaging.ForgetReservation(_state?.TempDirectory);
+        }
+
+        private void ReserveOutputNameIfRenaming()
+        {
+            if (Config.Instance.FileConflictResolution != FileConflictResolution.AutoRename) return;
+            this.TargetFileName = OutputFileStaging.ReserveUniqueFileName(this.TargetFileName, this.TargetDir, _state?.TempDirectory);
+            reservedOutput = TargetFile;
+        }
+
+        private void CommitOutput(string staging)
+        {
+            OutputFileStaging.Commit(staging, TargetFile);
+            partialOutput = null;
+            reservedOutput = null;
         }
 
         protected void OnProbe()
@@ -380,10 +506,11 @@ namespace ADM.Core.Downloader.Adaptive
                 {
                     for (var i = startIndex; i <= endIndex; i++)
                     {
-                        if (this._cancellationTokenSource.IsCancellationRequested)
+                        if (this._cancellationTokenSource.IsCancellationRequested || finishRequested)
                         {
                             break;
                         }
+                        if (i >= _chunks.Count) break;
                         var chunk = _chunks[i];
                         if (chunk.ChunkState == ChunkState.Finished)
                         {
@@ -393,9 +520,13 @@ namespace ADM.Core.Downloader.Adaptive
                         count++;
                     }
                 }
+                catch (ArgumentOutOfRangeException ex)
+                {
+                    Log.Debug(ex, "The chunk list changed while a worker was starting its next chunk");
+                }
                 finally
                 {
-                    if (this._cancellationTokenSource.IsCancellationRequested) latch.Break();
+                    if (this._cancellationTokenSource.IsCancellationRequested || finishRequested) latch.Break();
                 }
                 Log.Debug("Finished chunk-count: " + count);
             }).Start();
@@ -436,7 +567,8 @@ namespace ADM.Core.Downloader.Adaptive
 
             Log.Debug("Waiting for downloading all chunks");
             this.countdownLatch.Wait();
-            if (_cancellationTokenSource.IsCancellationRequested && !_cancelRequestor.WaitForQuiescence(5000))
+            if (finishRequested) _cancelRequestor.CancelAll();
+            if ((_cancellationTokenSource.IsCancellationRequested || finishRequested) && !_cancelRequestor.WaitForQuiescence(5000))
             {
                 Log.Debug("Adaptive workers did not quiesce after cancellation");
             }
@@ -450,6 +582,7 @@ namespace ADM.Core.Downloader.Adaptive
             var chunkDownloader = new HttpChunkDownloader(chunk, _http, this._state.Headers,
                 this._state.Cookies, this._state.Authentication,
                 _chunkStreamMap, _cancelRequestor);
+            chunkDownloader.SkipWhenGone = SkipsMissingChunks;
 
             try
             {
@@ -567,6 +700,20 @@ namespace ADM.Core.Downloader.Adaptive
 
         protected virtual void Assemble()
         {
+            try
+            {
+                AssembleOutput();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Assembly did not finish, removing the unfinished output");
+                DiscardPartialOutput();
+                throw;
+            }
+        }
+
+        private void AssembleOutput()
+        {
             SaveChunkState();
             if (this._cancellationTokenSource.IsCancellationRequested) return;
             if (string.IsNullOrEmpty(this.TargetDir))
@@ -579,16 +726,16 @@ namespace ADM.Core.Downloader.Adaptive
                 Directory.CreateDirectory(this.TargetDir);
             }
 
-            if (Config.Instance.FileConflictResolution == FileConflictResolution.AutoRename)
-            {
-                this.TargetFileName = FileHelper.GetUniqueFileName(this.TargetFileName, this.TargetDir);
-            }
+            if (MarkDamagedChunks()) throw new AssembleFailedException(ErrorCode.Generic);
+            ReserveOutputNameIfRenaming();
 
             if (!_state.Demuxed)
             {
-                partialOutput = File.Exists(TargetFile) ? null : TargetFile;
-                ConcatSegments(this._chunks.Select(c => this._chunkStreamMap.GetStream(c.Id)), TargetFile);
+                var plainStaging = OutputFileStaging.StagingPath(TargetFile, Id, false);
+                partialOutput = plainStaging;
+                ConcatSegments(this._chunks.Select(c => this._chunkStreamMap.GetStream(c.Id)), plainStaging);
                 if (this._cancellationTokenSource.IsCancellationRequested) return;
+                CommitOutput(plainStaging);
                 DeleteFileParts();
                 assembled = true;
                 return;
@@ -610,29 +757,20 @@ namespace ADM.Core.Downloader.Adaptive
                 audioFile);
             if (this._cancellationTokenSource.IsCancellationRequested) return;
 
-            partialOutput = File.Exists(TargetFile) ? null : TargetFile;
-            var res = mediaProcessor.MergeAudioVideStream(videoFile, audioFile, TargetFile,
+            var staging = OutputFileStaging.StagingPath(TargetFile, Id, true);
+            partialOutput = staging;
+            var res = mediaProcessor.MergeAudioVideStream(videoFile, audioFile, staging,
                 this._cancellationTokenSource, out long totalSize);
             if (this._cancellationTokenSource.IsCancellationRequested) return;
             if (res != MediaProcessingResult.Success)
             {
-                var failedOutput = partialOutput;
-                if (failedOutput != null)
-                {
-                    try
-                    {
-                        File.Delete(failedOutput);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Debug(ex, "The failed merge output could not be removed");
-                    }
-                }
+                DiscardPartialOutput();
                 var name = Path.GetFileNameWithoutExtension(TargetFileName);
                 TargetFileName = name + ".mkv";
-                this.TargetFileName = FileHelper.GetUniqueFileName(this.TargetFileName, this.TargetDir);
-                partialOutput = File.Exists(TargetFile) ? null : TargetFile;
-                var fallback = mediaProcessor.MergeAudioVideStream(videoFile, audioFile, TargetFile,
+                ReserveOutputNameIfRenaming();
+                staging = OutputFileStaging.StagingPath(TargetFile, Id, true);
+                partialOutput = staging;
+                var fallback = mediaProcessor.MergeAudioVideStream(videoFile, audioFile, staging,
                     this._cancellationTokenSource, out totalSize);
                 if (this._cancellationTokenSource.IsCancellationRequested) return;
                 if (fallback != MediaProcessingResult.Success)
@@ -644,6 +782,7 @@ namespace ADM.Core.Downloader.Adaptive
             }
 
             if (this._cancellationTokenSource.IsCancellationRequested) return;
+            CommitOutput(staging);
             DeleteFileParts();
 
             this._state.FileSize = totalSize;
@@ -655,7 +794,7 @@ namespace ADM.Core.Downloader.Adaptive
             Log.Debug("DeleteFileParts...");
             try
             {
-                Directory.Delete(_state.TempDirectory, true);
+                OutputFileStaging.DeleteFolder(_state.TempDirectory);
             }
             catch (Exception ex)
             {

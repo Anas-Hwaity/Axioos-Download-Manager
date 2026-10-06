@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import setup_payload
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 PRODUCT = "Axioos Download Manager"
 UPGRADE_CODE = "741CBBE2-3911-4192-A051-AFF85038EFD7"
 OUTPUT = ROOT / "release-output"

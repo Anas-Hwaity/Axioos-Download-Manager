@@ -53,7 +53,7 @@ namespace ADM.Core
             }
             catch (WaitHandleCannotBeOpenedException ex)
             {
-                Log.Debug(ex, "No running instance was found");
+                Log.Debug("No other running instance holds " + name + " (" + ex.GetType().Name + ")");
                 return Presence.Absent;
             }
             catch (UnauthorizedAccessException ex)

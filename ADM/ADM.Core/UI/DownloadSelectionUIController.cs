@@ -93,10 +93,11 @@ namespace ADM.Core.UI
 
         private void AddDownload(IDownloadEntryWrapper wrapper, bool startImmediately, string? queueId)
         {
+            var nameMode = wrapper.DownloadEntry is SingleSourceHTTPDownloadInfo single && single.KeepFileName ? FileNameFetchMode.None : mode;
             core.StartDownload(
                 wrapper.DownloadEntry,
                 wrapper.Name,
-                mode,
+                nameMode,
                 view.DownloadLocation,
                 startImmediately,
                 view.Authentication,

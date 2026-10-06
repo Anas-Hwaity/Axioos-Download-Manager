@@ -24,6 +24,8 @@ namespace ADM.Core
         public string PageSessionId { get; set; }
         public double? ObservedAtMonotonicMs { get; set; }
         public Action<string?>? CreationOutcome { get; set; }
+        public bool FileNameIsFromUrl { get; set; }
+        public bool HasSuppliedFileName => !FileNameIsFromUrl && File != null && File.Trim().Length > 0;
 
         public Message()
         {

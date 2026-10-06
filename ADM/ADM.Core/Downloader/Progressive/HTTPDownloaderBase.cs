@@ -6,6 +6,7 @@ using TraceLog;
 using ADM.Core;
 using ADM.Core.Util;
 using ADM.Core.Clients.Http;
+using ADM.Core.IO;
 using ADM.Core.MediaProcessor;
 using ADM.Core.Telemetry;
 using System.Text;
@@ -176,23 +177,75 @@ namespace ADM.Core.Downloader.Progressive
         protected bool assemblyCompleted;
         protected string? assemblyOutput;
 
+        protected string? reservedOutput;
+
+        private readonly Dictionary<StreamType, ResumeValidator> resumeValidators = new Dictionary<StreamType, ResumeValidator>();
+        private bool resumeValidatorsLoaded;
+
+        protected void RememberResumeValidator(StreamType streamType, ProbeResult result)
+        {
+            lock (resumeValidators)
+            {
+                if (!resumeValidatorsLoaded) LoadResumeValidators();
+                resumeValidators[streamType] = new ResumeValidator(result.ETag, result.LastModifiedHeader);
+                ResumeValidator.Save(GetState()?.TempDir, resumeValidators);
+            }
+        }
+
+        public bool IsRepresentationChanged(StreamType streamType, string? etag, string? lastModified)
+        {
+            ResumeValidator? saved;
+            lock (resumeValidators)
+            {
+                if (!resumeValidatorsLoaded) LoadResumeValidators();
+                resumeValidators.TryGetValue(streamType, out saved);
+            }
+            return ResumeValidator.IndicatesChange(saved, etag, lastModified);
+        }
+
+        public bool IsRepresentationConfirmed(StreamType streamType, string? etag)
+        {
+            ResumeValidator? saved;
+            lock (resumeValidators)
+            {
+                if (!resumeValidatorsLoaded) LoadResumeValidators();
+                resumeValidators.TryGetValue(streamType, out saved);
+            }
+            return ResumeValidator.Confirms(saved, etag);
+        }
+
+        private void LoadResumeValidators()
+        {
+            resumeValidatorsLoaded = true;
+            foreach (var pair in ResumeValidator.Load(GetState()?.TempDir))
+            {
+                resumeValidators[pair.Key] = pair.Value;
+            }
+        }
+
         protected bool AssemblyWasInterrupted()
         {
             if (assemblyCompleted || !this.cancelFlag.IsCancellationRequested) return false;
-            var partial = assemblyOutput;
-            assemblyOutput = null;
-            if (partial != null)
-            {
-                try
-                {
-                    File.Delete(partial);
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(ex, "The unfinished output file could not be removed");
-                }
-            }
+            DiscardAssemblyOutput();
             return true;
+        }
+
+        protected void DiscardAssemblyOutput()
+        {
+            var staging = assemblyOutput;
+            var reserved = reservedOutput;
+            assemblyOutput = null;
+            reservedOutput = null;
+            OutputFileStaging.Discard(staging, reserved);
+            if (reserved != null) OutputFileStaging.ForgetReservation(GetState()?.TempDir);
+        }
+
+        protected void ReserveOutputNameIfRenaming()
+        {
+            if (Config.Instance.FileConflictResolution != FileConflictResolution.AutoRename) return;
+            if (this.TargetDir == null || this.TargetFileName == null) return;
+            this.TargetFileName = OutputFileStaging.ReserveUniqueFileName(this.TargetFileName, this.TargetDir, GetState()?.TempDir);
+            reservedOutput = this.TargetFile;
         }
 
         private AuthenticationInfo? resumeAuthentication;
@@ -407,6 +460,8 @@ namespace ADM.Core.Downloader.Progressive
                 SaveSpeedLimitIfChanged();
                 totalDownloadedBytes += bytes;
                 downloadedBytesSinceStartOrResume += bytes;
+                if (totalDownloadedBytes < 0) totalDownloadedBytes = 0;
+                if (downloadedBytesSinceStartOrResume < 0) downloadedBytesSinceStartOrResume = 0;
 
                 var pc = pieces[pieceId];
                 pc.Downloaded += bytes;
@@ -699,7 +754,7 @@ namespace ADM.Core.Downloader.Progressive
             try
             {
                 Log.Debug("Deleting temporary download files");
-                Directory.Delete(this.GetState().TempDir, true);
+                OutputFileStaging.DeleteFolder(this.GetState().TempDir);
             }
             catch (Exception ex)
             {

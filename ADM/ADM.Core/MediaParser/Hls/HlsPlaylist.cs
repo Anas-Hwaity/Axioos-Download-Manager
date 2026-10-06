@@ -12,5 +12,7 @@ namespace ADM.Core.MediaParser.Hls
         public double TotalDuration { get; set; }
         public bool HasByteRange { get; set; }
         public bool IsKeyIFrameOnly { get; set; }
+        public bool IsEndless { get; set; }
+        public double TargetDuration { get; set; }
     }
 }

@@ -50,6 +50,8 @@
     };
 
     const bidiClean = value => String(value == null ? "" : value).replace(/[\u202A-\u202E\u2066-\u2069]/g, "");
+    const isolated = value => `<bdi dir="ltr">${esc(bidiClean(value))}</bdi>`;
+    const toastPart = value => value && typeof value === "object" && typeof value.html === "string" ? value.html : esc(value);
     const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
     const svg = (name, width) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${width || 1.8}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ICON.other}</svg>`;
     const LOGO = size => `<svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-label="Axioos"><defs><linearGradient id="axlg${size}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c6ff3d"/><stop offset="1" stop-color="#3dffc6"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#axlg${size})"/><path fill="#0a0f02" fill-rule="evenodd" d="M32 9 L53 55 H42.5 L38.8 46.5 H25.2 L21.5 55 H11 Z M25.5 28 H38.5 L32 39 Z"/></svg>`;
@@ -602,7 +604,7 @@
         const el = document.createElement("div");
         el.className = "toast";
         el.setAttribute("role", "status");
-        el.innerHTML = `<b>${esc(title)}</b>${body ? `<p>${esc(body)}</p>` : ""}${actions && actions.length ? `<div class="btns">${actions.map((action, index) => `<button type="button" class="btn s${index ? " gh" : ""}" data-toast="${esc(action.name)}" data-id="${esc(action.id)}">${esc(action.label)}</button>`).join("")}</div>` : ""}`;
+        el.innerHTML = `<b>${toastPart(title)}</b>${body ? `<p>${toastPart(body)}</p>` : ""}${actions && actions.length ? `<div class="btns">${actions.map((action, index) => `<button type="button" class="btn s${index ? " gh" : ""}" data-toast="${esc(action.name)}" data-id="${esc(action.id)}">${esc(action.label)}</button>`).join("")}</div>` : ""}`;
         box.appendChild(el);
         setTimeout(() => el.remove(), 5200);
     }
@@ -865,7 +867,7 @@
                 for (const item of model.items) {
                     const was = previous.get(item.id);
                     if (was && was !== "done" && item.kind === "finished") {
-                        toast(`Finished: ${item.name}`, `Saved to ${item.dir || "the download folder"}`, [
+                        toast({ html: `Finished: ${isolated(item.name)}` }, { html: `Saved to ${isolated(item.dir || "the download folder")}` }, [
                             { name: "open", label: "Open", id: item.id },
                             { name: "openFolder", label: "Show in folder", id: item.id }
                         ]);
@@ -890,7 +892,7 @@
             const items = (message.items || []).filter(i => i.visible !== false).map(i => ({ id: i.name, text: i.text, enabled: i.enabled }));
             if (items.length) openPop(items, point, id => send({ cmd: "menuInvoke", name: id }));
         } else if (message.type === "toast") {
-            toast(message.title || "", message.body || "", null, true);
+            toast(String(message.title || ""), String(message.body || ""), null, true);
         } else if (message.type === "focusSearch") {
             const q = document.getElementById("q");
             if (q) q.focus();

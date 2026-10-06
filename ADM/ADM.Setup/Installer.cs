@@ -20,7 +20,11 @@ namespace Axioos.Setup
     {
         Unpacking,
         Closing,
-        Installing
+        Installing,
+        Approval,
+        Protecting,
+        Replacing,
+        Checking
     }
 
     internal sealed class InstallResult
@@ -30,6 +34,8 @@ namespace Axioos.Setup
         internal bool Cancelled;
         internal bool RestartNeeded;
         internal string Message;
+        internal string DataNote;
+        internal bool DataProblem;
 
         internal static InstallResult FromExitCode(int code, string logFile)
         {
@@ -147,8 +153,9 @@ namespace Axioos.Setup
             {
                 string installer = Path.Combine(folder, payload.FileName);
                 File.WriteAllBytes(installer, payload.Content);
-                if (report != null) report(SetupStep.Installing, 0);
+                if (report != null) report(SetupStep.Approval, 0);
                 string logFile = Path.Combine(Path.GetTempPath(), "Axioos-Setup.log");
+                bool replacing = mode != SetupMode.Classic && DataGuard.PreviousVersionPresent(customFolder);
                 var arguments = new StringBuilder("/i \"" + installer + "\"");
                 if (mode != SetupMode.Classic) arguments.Append(" /qn /norestart");
                 if (mode == SetupMode.Branded) arguments.Append(" /l*v \"" + logFile + "\"");
@@ -169,13 +176,30 @@ namespace Axioos.Setup
                     using (Process process = Process.Start(start))
                     {
                         if (process == null) throw new IOException("Windows Installer could not be started.");
-                        if (mode != SetupMode.Classic)
+                        if (mode == SetupMode.Classic)
                         {
-                            if (report != null) report(SetupStep.Closing, 0);
-                            CloseRunningApp();
+                            process.WaitForExit();
+                            return InstallResult.FromExitCode(process.ExitCode, null);
                         }
+                        var journal = new SetupJournal();
+                        journal.Note("Setup started for Axioos Download Manager");
+                        if (report != null) report(SetupStep.Closing, 0);
+                        CloseRunningApp();
+                        journal.Note("Axioos was closed");
+                        if (report != null) report(SetupStep.Protecting, 0);
+                        List<string> dataFolders = DataGuard.KnownFolders();
+                        List<DataSnapshot> snapshots = DataGuard.Protect(dataFolders, journal);
+                        if (report != null) report(replacing ? SetupStep.Replacing : SetupStep.Installing, 0);
                         process.WaitForExit();
-                        return InstallResult.FromExitCode(process.ExitCode, mode == SetupMode.Branded ? logFile : null);
+                        journal.Note("Windows Installer ended with code " + process.ExitCode);
+                        InstallResult result = InstallResult.FromExitCode(process.ExitCode, mode == SetupMode.Branded ? logFile : null);
+                        if (report != null) report(SetupStep.Checking, 0);
+                        bool dataProblem;
+                        result.DataNote = DataGuard.Verify(snapshots, journal, out dataProblem);
+                        result.DataProblem = dataProblem;
+                        if (result.DataNote.Length > 0) journal.Note(result.DataNote);
+                        DataGuard.KeepSetupLogs(dataFolders, mode == SetupMode.Branded ? logFile : null, journal);
+                        return result;
                     }
                 }
                 catch (Win32Exception error)

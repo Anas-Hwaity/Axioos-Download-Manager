@@ -45,12 +45,8 @@ namespace ADM.Wpf.UI
         {
             Trace.WriteLine("ADM app start");
             AcceptanceDiagnostics.RecordStage("application.startup.enter");
-            var debugMode = Environment.GetEnvironmentVariable("ADM_DEBUG_MODE");
-            if (!string.IsNullOrEmpty(debugMode) && debugMode == "1")
-            {
-                var logFile = Path.Combine(Config.AppDir, "log.txt");
-                Log.InitFileBasedTrace(Path.Combine(Config.AppDir, "log.txt"));
-            }
+            Log.InitFileBasedTrace(Path.Combine(Config.EnsureDataFolder(), "log.txt"));
+            Log.Debug("Axioos " + AppInfo.APP_VERSION + " started");
             Log.Debug($"Application_Startup::argCount->{Math.Max(0, Environment.GetCommandLineArgs().Length - 1)}");
 
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -181,8 +177,7 @@ namespace ADM.Wpf.UI
             {
                 if (PlatformHelper.IsNewVersionRun())
                 {
-                    MsixHelper.CopyExtension();
-                    PlatformHelper.MarkVersionRun();
+                    if (MsixHelper.CopyExtension()) PlatformHelper.MarkVersionRun();
                 }
             }
             catch (Exception ex)

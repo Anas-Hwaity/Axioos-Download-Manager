@@ -18,6 +18,8 @@ First-pass social analysis is cookie-free. If the analyzer reports that authenti
 
 Download history, recovery state, rules, settings, and diagnostics are stored locally. Diagnostic exports must sanitize secrets such as cookies, authorization values, passwords, bearer tokens, and sensitive signed-query values before release use.
 
+Axioos keeps a local log file, `log.txt`, in its data folder (`.adm-app-data` in your user folder). It records what the app did and any errors, with cookies, passwords and signed link values removed. The log never leaves your computer unless you send it yourself. It is limited in size: when it reaches about 4 MB it is renamed to `log.1.txt` and a new one is started, and the three most recent older files are kept. Setup keeps this folder when you update or remove the app, and stores a copy of your download list in its `backups` folder before each update.
+
 On NTFS, Axioos also writes a hidden `Axioos.Origin` alternate data stream beside a completed file. It records that the file was downloaded by Axioos and the completion date. The marker does not change the file's contents. It is skipped on file systems that do not support this stream.
 
 ## Telemetry

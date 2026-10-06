@@ -260,6 +260,7 @@ namespace Axioos.Setup
         private bool working;
         private bool finished;
         private bool freshInstall;
+        private bool freshInstallDecided;
 
         internal int ExitCode { get; private set; }
 
@@ -500,6 +501,7 @@ namespace Axioos.Setup
                 if (!string.Equals(Path.GetFileName(chosen), "Axioos", StringComparison.OrdinalIgnoreCase)) chosen = Path.Combine(chosen + "\\", "Axioos");
                 folder = chosen;
                 folderChanged = true;
+                freshInstallDecided = false;
                 folderText.Text = folder;
             }
         }
@@ -518,7 +520,11 @@ namespace Axioos.Setup
         private void StartInstall()
         {
             working = true;
-            freshInstall = !File.Exists(Path.Combine(folder, Installer.AppExecutable));
+            if (!freshInstallDecided)
+            {
+                freshInstall = !File.Exists(Path.Combine(folder, Installer.AppExecutable));
+                freshInstallDecided = true;
+            }
             primary.Enabled = false;
             secondary.Enabled = false;
             change.Enabled = false;
@@ -561,11 +567,35 @@ namespace Axioos.Setup
                     return;
                 }
                 progress.Marquee = true;
-                status.Text = "Installing";
-                detail.Text = step == SetupStep.Closing
-                    ? "Installing Axioos. This takes a moment."
-                    : "Approve the Windows permission prompt to continue.";
+                status.Text = StepTitle(step);
+                detail.Text = StepDetail(step);
             });
+        }
+
+        private static string StepTitle(SetupStep step)
+        {
+            switch (step)
+            {
+                case SetupStep.Approval: return "Waiting for permission";
+                case SetupStep.Closing: return "Closing Axioos";
+                case SetupStep.Protecting: return "Protecting your downloads";
+                case SetupStep.Replacing: return "Replacing the previous version";
+                case SetupStep.Checking: return "Checking your downloads";
+                default: return "Installing";
+            }
+        }
+
+        private static string StepDetail(SetupStep step)
+        {
+            switch (step)
+            {
+                case SetupStep.Approval: return "Approve the Windows permission prompt to continue.";
+                case SetupStep.Closing: return "Axioos is closed so its files can be replaced.";
+                case SetupStep.Protecting: return "Saving a copy of your download list before anything changes.";
+                case SetupStep.Replacing: return "Windows removes the old program files first, then installs the new ones. Your downloads, settings and logs stay where they are.";
+                case SetupStep.Checking: return "Making sure your downloads, settings and logs are still in place.";
+                default: return "Installing Axioos. This takes a moment.";
+            }
         }
 
         private void Complete(InstallResult result)
@@ -581,6 +611,11 @@ namespace Axioos.Setup
                 detail.Text = result.RestartNeeded
                     ? "Restart Windows to finish replacing files that were in use."
                     : "You will find Axioos in the Start menu and on the desktop.";
+                if (!string.IsNullOrEmpty(result.DataNote))
+                {
+                    detail.Text = result.RestartNeeded ? detail.Text + " " + result.DataNote : result.DataNote;
+                    if (result.DataProblem) detail.ForeColor = Palette.Danger;
+                }
                 primary.Text = "Finish";
                 primary.Enabled = true;
                 secondary.Visible = false;

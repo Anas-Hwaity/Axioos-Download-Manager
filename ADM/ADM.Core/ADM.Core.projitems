@@ -109,6 +109,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\NetFxHttpSession.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\ProxyHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\WebRequestExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\HeaderFileNameDecoder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\WinHttpClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\WinHttpResponseStream.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Clients\Http\WinHttpSession.cs" />
@@ -142,6 +143,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)ProxyInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)StreamingVideoDisplayInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IO\TransactedIO.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IO\OutputFileStaging.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Downloader\Progressive\ResumeValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Updater\UpdateChecker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Telemetry\DownloadTelemetryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Telemetry\DownloadTelemetryProjection.cs" />

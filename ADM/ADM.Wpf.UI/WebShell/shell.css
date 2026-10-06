@@ -75,7 +75,8 @@ button { font: inherit; color: inherit; }
 .bd { width: 32px; height: 32px; border-radius: 11px; display: grid; place-items: center; font-size: 9px; font-weight: 700; letter-spacing: .02em; background: var(--badge); color: var(--ink); }
 .bd svg { width: 16px; height: 16px; }
 .nm { min-width: 0; }
-.nm b, .insp h4, .toast b { unicode-bidi: plaintext; text-align: start; }
+.insp h4, .toast b, .toast p { unicode-bidi: plaintext; text-align: start; }
+.nm b { direction: ltr; unicode-bidi: isolate; text-align: start; }
 .nm b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nm small { display: block; color: var(--mut); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

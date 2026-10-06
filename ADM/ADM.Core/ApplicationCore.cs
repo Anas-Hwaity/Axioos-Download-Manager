@@ -383,7 +383,8 @@ namespace ADM.Core
                     Uri = url,
                     File = file,
                     Headers = message?.RequestHeaders,
-                    Cookies = message?.Cookies
+                    Cookies = message?.Cookies,
+                    KeepFileName = message != null && message.HasSuppliedFileName
                 };
                 list.Add(si);
             }
@@ -407,7 +408,7 @@ namespace ADM.Core
                         Cookies = message?.Cookies
                     },
                     file,
-                    FileNameFetchMode.FileNameAndExtension,
+                    message != null && message.HasSuppliedFileName ? FileNameFetchMode.None : FileNameFetchMode.FileNameAndExtension,
                     null,
                     true,
                     null,
@@ -542,6 +543,22 @@ namespace ADM.Core
             {
                 Log.Debug(ex, "Error showing progress window");
             }
+        }
+
+        public void PauseDownloads(IEnumerable<string> list, bool closeProgressWindow = false)
+        {
+            var remaining = new List<string>();
+            foreach (var id in new List<string>(list))
+            {
+                IBaseDownloader? http;
+                lock (this)
+                {
+                    http = liveDownloads.GetValueOrDefault(id).Key;
+                }
+                if (http is MultiSourceHLSDownloader recording && recording.FinishLiveCapture()) continue;
+                remaining.Add(id);
+            }
+            StopDownloads(remaining, closeProgressWindow);
         }
 
         public void StopDownloads(IEnumerable<string> list, bool closeProgressWindow = false)
@@ -1140,10 +1157,16 @@ namespace ADM.Core
 
                 try
                 {
-                    if (tempDir != null && tempDir.Length > 0 && Directory.Exists(tempDir))
+                    if ((tempDir == null || tempDir.Length == 0) && entry.Id != null && entry.Id.Length > 0)
                     {
-                        Directory.Delete(tempDir, true);
+                        tempDir = Path.Combine(Config.Instance.TempDir, entry.Id);
                     }
+                    if (entry is InProgressDownloadItem)
+                    {
+                        OutputFileStaging.ReleaseReservation(tempDir, entry.TargetDir);
+                        OutputFileStaging.DiscardLeftovers(entry.TargetDir, entry.Id);
+                    }
+                    OutputFileStaging.DeleteFolder(tempDir);
                 }
                 catch (Exception ex)
                 {

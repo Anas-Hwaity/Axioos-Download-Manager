@@ -59,6 +59,7 @@ class VideoPopup {
             button.setAttribute("role", "menuitem");
             const title = document.createElement("span");
             title.className = "adm-item-title";
+            title.dir = "auto";
             title.textContent = String(item?.text || "Detected media");
             title.title = title.textContent;
             const detail = document.createElement("span");

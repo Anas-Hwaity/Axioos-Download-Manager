@@ -24,6 +24,12 @@ namespace ADM.Core.Downloader.Progressive
         private long maxByteRange = 0;
         private long actualHttpResponseSize = -1;
         private bool emptyRepresentation;
+        private const int ResumeCheckBytes = 8192;
+        private long resumeOverlap;
+        private long resumeDownloadedAtRequest;
+        private long responseBodyRemaining = -1;
+        private bool representationConfirmed;
+        private bool rewoundAfterMismatch;
 
         public CancelFlag CancellationToken => cancellationTokenSource;
         public PieceGrabber(string pieceId, IPieceCallback callback)
@@ -92,6 +98,11 @@ namespace ADM.Core.Downloader.Progressive
                     catch (TextRedirectException e)
                     {
                         this.redirectUri = e.RedirectUri;
+                        continue;
+                    }
+                    catch (RangeEndedEarlyException e)
+                    {
+                        Log.Debug(e, "The server sent less than the requested range, asking for the rest");
                         continue;
                     }
                     catch (HttpException e)
@@ -177,7 +188,7 @@ namespace ADM.Core.Downloader.Progressive
                 CancellationToken.ThrowIfCancellationRequested();
                 if (!firstRequest)
                 {
-                    var requestedStart = piece.Offset + piece.Downloaded;
+                    var requestedStart = piece.Offset + resumeDownloadedAtRequest - resumeOverlap;
                     var resumeDecision = HttpResumeDecisionEvaluator.Evaluate(
                         response.StatusCode, requestedStart, response.ContentRangeStart, response.ContentRangeLength, null);
                     if (resumeDecision == HttpResumeDecision.RangeIgnored)
@@ -186,6 +197,15 @@ namespace ADM.Core.Downloader.Progressive
                         throw new NonRetriableException(ErrorCode.InvalidResponse, "ResumeOffsetMismatch :: " + piece.Id);
                     if (resumeDecision == HttpResumeDecision.RepresentationChanged)
                         throw new NonRetriableException(ErrorCode.InvalidResponse, "ResumeRepresentationChanged :: " + piece.Id);
+                    if (response.StatusCode == HttpStatusCode.PartialContent
+                        && this.callback.IsRepresentationChanged(piece.StreamType, response.GetHeader("ETag"), response.GetHeader("Last-Modified")))
+                        throw new NonRetriableException(ErrorCode.SourceChanged, "ResumeValidatorChanged :: " + piece.Id);
+                    representationConfirmed = response.StatusCode == HttpStatusCode.PartialContent
+                        && this.callback.IsRepresentationConfirmed(piece.StreamType, response.GetHeader("ETag"));
+                }
+                if (firstRequest && response.StatusCode == HttpStatusCode.PartialContent && response.ContentRangeStart > 0)
+                {
+                    throw new NonRetriableException(ErrorCode.InvalidResponse, "FirstRangeOffsetMismatch :: " + piece.Id);
                 }
                 if (firstRequest && response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable
                     && piece.Offset == 0 && piece.Downloaded == 0 && response.ContentRangeLength == 0)
@@ -233,6 +253,7 @@ namespace ADM.Core.Downloader.Progressive
                 }
                 maxByteRange = contentLength <= 0 ? -1 : piece.Offset + contentLength;
                 actualHttpResponseSize = maxByteRange;
+                responseBodyRemaining = RangeBodyLength(response);
                 this.callback?.PieceConnected(this.pieceId, firstRequest ? CreateProbeResult(response!) : null);
                 error = false;
                 return response!;
@@ -253,6 +274,7 @@ namespace ADM.Core.Downloader.Progressive
             var piece = this.callback.GetPiece(this.pieceId);
             using var sourceStream = response.GetResponseStream();
             CancellationToken.ThrowIfCancellationRequested();
+            VerifyResumeOverlap(piece, sourceStream);
             try
             {
                 using var targetStream = new FileStream(this.callback.GetPieceFile(this.pieceId), 
@@ -288,7 +310,7 @@ namespace ADM.Core.Downloader.Progressive
 #endif
             try
             {
-                var count = 0;
+                var count = 0L;
                 while (!CancellationToken.IsCancellationRequested)
                 {
                     if (this.pieceId == null || this.callback == null) break;
@@ -311,8 +333,13 @@ namespace ADM.Core.Downloader.Progressive
                     this.CancellationToken.ThrowIfCancellationRequested();
                     if (x == 0)
                     {
+                        if (responseBodyRemaining == 0 && count > 0)
+                        {
+                            throw new RangeEndedEarlyException("Range ended before the piece was complete :: " + piece.Id);
+                        }
                         throw new DownloadException(ErrorCode.Generic, "Unexpected EOF :: " + piece.Id);
                     }
+                    if (responseBodyRemaining > 0) responseBodyRemaining = Math.Max(0, responseBodyRemaining - x);
                     try
                     {
                         targetStream.Write(BUF, 0, x);
@@ -401,14 +428,105 @@ namespace ADM.Core.Downloader.Progressive
                 headerCookieUrl.Value.Authentication);
             if (this.callback.IsFirstRequest(piece.StreamType))
             {
+                resumeOverlap = 0;
+                resumeDownloadedAtRequest = 0;
                 req.AddRange(0);
             }
             else
             {
-                Log.Debug("Range: " + (piece.Offset + piece.Downloaded) + "-" + (piece.Offset + piece.Length - 1));
-                req.AddRange(piece.Offset + piece.Downloaded, piece.Offset + piece.Length - 1);
+                resumeDownloadedAtRequest = piece.Downloaded;
+                resumeOverlap = Math.Max(0, Math.Min(piece.Downloaded, ResumeCheckBytes));
+                var rangeStart = piece.Offset + resumeDownloadedAtRequest - resumeOverlap;
+                Log.Debug("Range: " + rangeStart + "-" + (piece.Offset + piece.Length - 1));
+                req.AddRange(rangeStart, piece.Offset + piece.Length - 1);
             }
             return req;
+        }
+
+        private static long RangeBodyLength(HttpResponse response)
+        {
+            if (response.Compressed || response.StatusCode != HttpStatusCode.PartialContent) return -1;
+            if (WebRequestExtensions.TryParseContentRange(response.GetHeader("Content-Range"), out long start, out long end, out _)
+                && start >= 0 && end >= start)
+            {
+                return end - start + 1;
+            }
+            return -1;
+        }
+
+        private static long CompleteLength(HttpResponse response)
+        {
+            if (response.StatusCode == HttpStatusCode.PartialContent)
+            {
+                var total = response.ContentRangeLength;
+                if (total > 0) return total;
+            }
+            return response.ContentLength;
+        }
+
+        private void VerifyResumeOverlap(Piece piece, Stream sourceStream)
+        {
+            var overlap = (int)resumeOverlap;
+            resumeOverlap = 0;
+            if (overlap <= 0 || this.callback == null || this.pieceId == null) return;
+            if (piece.Downloaded != resumeDownloadedAtRequest)
+            {
+                throw new DownloadException(ErrorCode.Generic, "Saved part moved while reconnecting :: " + piece.Id);
+            }
+            var fromServer = new byte[overlap];
+            var received = 0;
+            while (received < overlap)
+            {
+                var x = sourceStream.Read(fromServer, received, overlap - received);
+                this.CancellationToken.ThrowIfCancellationRequested();
+                if (x == 0)
+                {
+                    throw new DownloadException(ErrorCode.Generic, "Unexpected EOF while checking the saved part :: " + piece.Id);
+                }
+                received += x;
+            }
+            if (responseBodyRemaining > 0) responseBodyRemaining = Math.Max(0, responseBodyRemaining - overlap);
+            var onDisk = new byte[overlap];
+            var available = 0;
+            try
+            {
+                using var saved = new FileStream(this.callback.GetPieceFile(this.pieceId), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                saved.Seek(piece.Downloaded - overlap, SeekOrigin.Begin);
+                while (available < overlap)
+                {
+                    var y = saved.Read(onDisk, available, overlap - available);
+                    if (y == 0) break;
+                    available += y;
+                }
+            }
+            catch (FileNotFoundException ex)
+            {
+                Log.Debug(ex, "The saved part is missing");
+                available = -1;
+            }
+            if (available < overlap)
+            {
+                RejectSavedPart(piece, available < 0 ? "SavedPartMissing" : "SavedPartTooShort");
+            }
+            for (var i = 0; i < overlap; i++)
+            {
+                if (fromServer[i] != onDisk[i])
+                {
+                    RejectSavedPart(piece, "ResumeContentMismatch");
+                }
+            }
+        }
+
+        private void RejectSavedPart(Piece piece, string reason)
+        {
+            if (representationConfirmed && !rewoundAfterMismatch && this.callback != null && this.pieceId != null)
+            {
+                rewoundAfterMismatch = true;
+                Log.Debug("The saved part of a piece does not match an unchanged file on the server, fetching that piece again :: " + reason);
+                this.callback.UpdateDownloadedBytesCount(this.pieceId, -piece.Downloaded);
+                throw new DownloadException(ErrorCode.Generic, reason + " :: " + piece.Id);
+            }
+            throw new NonRetriableException(ErrorCode.SourceChanged, reason + " :: " + piece.Id);
         }
 
 
@@ -418,12 +536,14 @@ namespace ADM.Core.Downloader.Progressive
         {
             return new ProbeResult
             {
-                ResourceSize = response.Compressed ? -1 : response.ContentLength,
+                ResourceSize = response.Compressed ? -1 : CompleteLength(response),
                 Resumable = response.Compressed ? false : response.StatusCode == HttpStatusCode.PartialContent,
                 FinalUri = redirectUri ?? response.ResponseUri,
                 AttachmentName = response.ContentDispositionFileName,
                 ContentType = response.ContentType,
-                LastModified = response.LastModified
+                LastModified = response.LastModified,
+                ETag = response.GetHeader("ETag"),
+                LastModifiedHeader = response.GetHeader("Last-Modified")
             };
         }
 

@@ -23,7 +23,8 @@ namespace ADM.Core
                 [errPrefix + ErrorCode.FFmpegNotFound] = "FFmpeg not found",
                 [errPrefix + ErrorCode.FFmpegError] = "FFmpeg error",
                 [errPrefix + ErrorCode.DiskError] = "Disk is either full or readonly",
-                [errPrefix + ErrorCode.SessionExpired] = "Session expired"
+                [errPrefix + ErrorCode.SessionExpired] = "Session expired",
+                [errPrefix + ErrorCode.SourceChanged] = "The saved part of this download no longer matches the file on the server. Restart the download to get the current file."
             };
         }
 

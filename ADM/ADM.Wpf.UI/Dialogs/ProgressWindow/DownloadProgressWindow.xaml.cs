@@ -45,7 +45,7 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
                 var val = value >= 0 && value <= 100 ? value : 0;
                 this.PrgProgress.Value = val;
                 var prg = value >= 0 && value <= 100 ? value + "% " : "";
-                this.Title = $"{prg}{FileNameText}";
+                this.Title = $"{prg}\u200E{FileNameText}";
 #if NET45_OR_GREATER
                 this.TaskbarItemInfo.Description = this.Title;
                 this.TaskbarItemInfo.ProgressValue = val / 100.0;
@@ -212,14 +212,14 @@ namespace ADM.Wpf.UI.Dialogs.ProgressWindow
         {
             TxtFileName.Text = value;
             var prg = PrgProgress.Value >= 0 && PrgProgress.Value <= 100 ? PrgProgress.Value + "% " : "";
-            this.Title = $"{prg}{value}";
+            this.Title = $"{prg}\u200E{value}";
         }
 
         private void StopDownload(bool close)
         {
             if (downloadId != null)
             {
-                runtimeContext.CoreService.StopDownloads(new List<string> { downloadId }, close);
+                runtimeContext.CoreService.PauseDownloads(new List<string> { downloadId }, close);
             }
         }
 

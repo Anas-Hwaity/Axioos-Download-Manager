@@ -10,6 +10,6 @@ namespace ADM.Core
     {
         None, Generic, NonResumable, AssemblingFailed,
         MaxRetryFailed, InvalidResponse, FFmpegNotFound,
-        FFmpegError, DiskError, SessionExpired
+        FFmpegError, DiskError, SessionExpired, SourceChanged
     }
 }

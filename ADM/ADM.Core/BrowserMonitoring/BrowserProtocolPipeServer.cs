@@ -399,6 +399,7 @@ namespace ADM.Core.BrowserMonitoring
                 var headers = TakeoverRequestHeaders(payload);
                 var cookies = TakeoverCookies(payload);
                 var message = new Message { Url = url, File = file, RequestHeaders = headers, Cookies = cookies };
+                message.FileNameIsFromUrl = string.IsNullOrWhiteSpace(requestedFile);
                 var totalSize = payload?.Value<long?>("totalSize") ?? 0;
                 if (totalSize > 0)
                 {

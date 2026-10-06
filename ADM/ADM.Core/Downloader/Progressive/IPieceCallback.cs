@@ -9,6 +9,8 @@ namespace ADM.Core.Downloader.Progressive
     {
         public bool IsFirstRequest(StreamType streamType);
         public bool IsFileChangedOnServer(StreamType streamType, long streamSize, DateTime? lastModified);
+        public bool IsRepresentationChanged(StreamType streamType, string? etag, string? lastModified);
+        public bool IsRepresentationConfirmed(StreamType streamType, string? etag);
         public Piece GetPiece(string pieceId);
         public HeaderData?
             GetHeaderUrlAndCookies(string pieceId);

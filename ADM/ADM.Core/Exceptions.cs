@@ -36,6 +36,11 @@ namespace ADM.Core
         { }
     }
 
+    public class RangeEndedEarlyException : Exception
+    {
+        public RangeEndedEarlyException(string message) : base(message) { }
+    }
+
     public class AssembleFailedException : DownloadException
     {
         public AssembleFailedException(ErrorCode errorCode) : base(errorCode) { }

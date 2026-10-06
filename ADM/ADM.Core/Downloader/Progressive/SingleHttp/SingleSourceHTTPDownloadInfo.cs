@@ -12,5 +12,6 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
         public long ContentLength { get; set; }
         public bool ConvertToMp3 { get; set; }
         public string ContentType { get; set; }
+        public bool KeepFileName { get; set; }
     }
 }

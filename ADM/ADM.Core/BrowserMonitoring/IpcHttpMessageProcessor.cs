@@ -587,7 +587,7 @@ namespace ADM.Core.BrowserMonitoring
             dmsg.RequestHeaders = msg.RequestHeaders;
             dmsg.ResponseHeaders = msg.ResponseHeaders;
             dmsg.Cookies = msg.Cookie;
-            dmsg.File = FileHelper.SanitizeFileName(msg.File)!;
+            dmsg.File = string.IsNullOrWhiteSpace(msg.File) ? null! : FileHelper.SanitizeFileName(msg.File)!;
             dmsg.TabUrl = msg.TabUrl;
             dmsg.TabId = msg.TabId;
             dmsg.PageSessionId = msg.PageSessionId;
@@ -637,7 +637,7 @@ namespace ADM.Core.BrowserMonitoring
                 dmsg.RequestHeaders = msg.RequestHeaders;
                 dmsg.ResponseHeaders = msg.ResponseHeaders;
                 dmsg.Cookies = msg.Cookie;
-                dmsg.File = FileHelper.SanitizeFileName(msg.File)!;
+                dmsg.File = string.IsNullOrWhiteSpace(msg.File) ? null! : FileHelper.SanitizeFileName(msg.File)!;
                 dmsg.TabUrl = msg.TabUrl;
                 dmsg.TabId = msg.TabId;
                 dmsg.PageSessionId = msg.PageSessionId;

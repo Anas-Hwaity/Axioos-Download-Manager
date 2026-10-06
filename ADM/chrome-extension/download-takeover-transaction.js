@@ -25,6 +25,7 @@ export function browserDownloadIdentity(download) {
 
 const CONFIRMATION_POLL_MS = 1000;
 const CONFIRMATION_MAX_FAILURES = 3;
+const CANCEL_RETRY_DELAYS_MS = [250, 750, 2000, 5000];
 
 function searchDownload(downloads, id) {
   return new Promise(resolve => {
@@ -56,6 +57,7 @@ export default class DownloadTakeoverTransaction {
     this.connector = connector;
     this.enrich = options.enrich || null;
     this.pollMs = options.pollMs || CONFIRMATION_POLL_MS;
+    this.cancelRetryDelays = Array.isArray(options.cancelRetryDelays) ? options.cancelRetryDelays : CANCEL_RETRY_DELAYS_MS;
     this.delay = options.delay || (ms => new Promise(resolve => setTimeout(resolve, ms)));
   }
 
@@ -75,8 +77,7 @@ export default class DownloadTakeoverTransaction {
     try {
       response = await this.connector.requestDownloadTakeover(payload);
     } catch {
-      await this.resumeOrRetain(download.id);
-      return { accepted: false, reason: "TransportFailure" };
+      return this.resolveAfterTransportFailure(download.id, identity);
     }
 
     const result = response?.payload || {};
@@ -88,6 +89,7 @@ export default class DownloadTakeoverTransaction {
       }
       return this.waitForConfirmation(download.id, identity);
     }
+    if (result.code === "DesktopUnavailable") return this.resolveAfterTransportFailure(download.id, identity);
     await this.resumeOrRetain(download.id);
     return { accepted: false, reason: result.code || "TakeoverRejected" };
   }
@@ -115,15 +117,58 @@ export default class DownloadTakeoverTransaction {
     }
   }
 
+  async resolveAfterTransportFailure(browserDownloadId, identity) {
+    if (typeof this.connector?.queryTakeoverOwnership === "function") {
+      let result = null;
+      try {
+        result = (await this.connector.queryTakeoverOwnership(identity))?.payload || {};
+      } catch { }
+      if (result === null) {
+        if (typeof this.orphanStore.markAwaitingConfirmation === "function") {
+          await this.orphanStore.markAwaitingConfirmation(browserDownloadId);
+        }
+        return this.waitForConfirmation(browserDownloadId, identity);
+      }
+      if (result.code !== "DesktopUnavailable") {
+        const desktopDownloadId = ownedDesktopDownloadId(result);
+        if (desktopDownloadId) return this.finishOwned(browserDownloadId, desktopDownloadId);
+        if (awaitsDesktopConfirmation(result)) {
+          if (typeof this.orphanStore.markAwaitingConfirmation === "function") {
+            await this.orphanStore.markAwaitingConfirmation(browserDownloadId);
+          }
+          return this.waitForConfirmation(browserDownloadId, identity);
+        }
+      }
+    }
+    await this.resumeOrRetain(browserDownloadId);
+    return { accepted: false, reason: "TransportFailure" };
+  }
+
   async finishOwned(browserDownloadId, desktopDownloadId) {
     await this.orphanStore.markDurableAccepted(browserDownloadId, desktopDownloadId);
-    const cancelled = await callDownload(this.downloads, "cancel", browserDownloadId);
-    if (!cancelled) {
-      return { accepted: true, reason: "BrowserCancelPending", browserCleanupPending: true, desktopDownloadId };
+    if (!await this.completeBrowserCleanup(browserDownloadId)) {
+      return { accepted: true, reason: "BrowserCancelPending", browserCleanupPending: true, browserDownloadId, desktopDownloadId };
     }
+    return { accepted: true, desktopDownloadId };
+  }
+
+  async completeBrowserCleanup(browserDownloadId) {
+    if (!await this.cancelUntilStopped(browserDownloadId)) return false;
     await eraseDownload(this.downloads, browserDownloadId);
     await this.orphanStore.clear(browserDownloadId);
-    return { accepted: true, desktopDownloadId };
+    return true;
+  }
+
+  async cancelUntilStopped(browserDownloadId) {
+    for (let attempt = 0; ; attempt += 1) {
+      const cancelled = await callDownload(this.downloads, "cancel", browserDownloadId);
+      const current = await searchDownload(this.downloads, browserDownloadId);
+      if (current === null) return true;
+      if (current && current.state !== "in_progress") return true;
+      if (current === undefined && cancelled) return true;
+      if (attempt >= this.cancelRetryDelays.length) return false;
+      await this.delay(this.cancelRetryDelays[attempt]);
+    }
   }
 
   async resumeOrRetain(browserDownloadId) {

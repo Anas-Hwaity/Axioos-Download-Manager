@@ -177,6 +177,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                 if (result != null)
                 {
                     state.LastModified = result.LastModified;
+                    RememberResumeValidator(piece.StreamType, result);
                     piece.Length = result.ResourceSize ?? -1;
                     piece.Offset = 0;
                     piece.Downloaded = 0;
@@ -377,10 +378,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                         Directory.CreateDirectory(this.TargetDir);
                     }
 
-                    if (Config.Instance.FileConflictResolution == FileConflictResolution.AutoRename)
-                    {
-                        this.TargetFileName = FileHelper.GetUniqueFileName(this.TargetFileName, this.TargetDir);
-                    }
+                    ReserveOutputNameIfRenaming();
 
                     if (Helpers.GetFreeSpace(this.TargetDir, out long freespace))
                     {
@@ -425,8 +423,9 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                             if (prg > 100) prg = 100;
                             this.OnAssembleProgressChanged(prg);
                         };
-                        assemblyOutput = File.Exists(TargetFile) ? null : TargetFile;
-                        var res = mediaProcessor.MergeAudioVideStream(file1, file2, TargetFile,
+                        var staging = OutputFileStaging.StagingPath(TargetFile!, this.Id, true);
+                        assemblyOutput = staging;
+                        var res = mediaProcessor.MergeAudioVideStream(file1, file2, staging,
                             this.cancelFlag, out totalBytes);
                         if (this.cancelFlag.IsCancellationRequested) return;
                         if (res != MediaProcessingResult.Success)
@@ -435,6 +434,9 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                                 res == MediaProcessingResult.AppNotFound ? ErrorCode.FFmpegNotFound :
                                 ErrorCode.FFmpegError);
                         }
+                        OutputFileStaging.Commit(staging, TargetFile!);
+                        assemblyOutput = null;
+                        reservedOutput = null;
 
                         if (Config.Instance.FetchServerTimeStamp)
                         {
@@ -465,6 +467,7 @@ namespace ADM.Core.Downloader.Progressive.DualHttp
                 catch (Exception ex)
                 {
                     Log.Debug(ex, "error");
+                    DiscardAssemblyOutput();
                     var aex = new AssembleFailedException(ex is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
                     throw aex;
                 }

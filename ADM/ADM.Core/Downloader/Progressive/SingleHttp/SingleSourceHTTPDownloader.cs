@@ -211,6 +211,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                 {
                     Log.Debug("connected: " + result.ResourceSize + " init...");
                     state.LastModified = result.LastModified;
+                    RememberResumeValidator(StreamType.Primary, result);
                     this.totalSize = result.ResourceSize ?? -1;
                     this.resumable = result.Resumable;
                     var piece = this.pieces[pieceId];
@@ -285,10 +286,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
             {
                 Directory.CreateDirectory(this.TargetDir);
             }
-            if (Config.Instance.FileConflictResolution == FileConflictResolution.AutoRename)
-            {
-                this.TargetFileName = FileHelper.GetUniqueFileName(this.TargetFileName, this.TargetDir);
-            }
+            ReserveOutputNameIfRenaming();
 
             if (Helpers.GetFreeSpace(this.TargetDir, out long freespace))
             {
@@ -321,11 +319,11 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
 #endif
 
 
+                    var staging = OutputFileStaging.StagingPath(this.TargetFile!, this.Id, state!.ConvertToMp3);
                     var outFile = state!.ConvertToMp3 ? Path.Combine(this.GetState().TempDir!, Guid.NewGuid().ToString())
-                        : this.TargetFile;
-                    var outputExisted = !state!.ConvertToMp3 && File.Exists(outFile!);
+                        : staging;
+                    assemblyOutput = staging;
                     using var outfs = new FileStream(outFile!, FileMode.Create, FileAccess.Write);
-                    if (!state!.ConvertToMp3 && !outputExisted) assemblyOutput = outFile;
                     try
                     {
                         foreach (var pc in pieces)
@@ -396,8 +394,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                                     this.OnAssembleProgressChanged(prg);
                                 };
                                 outfs.Flush();
-                                assemblyOutput = File.Exists(TargetFile!) ? null : TargetFile;
-                                var res = mediaProcessor.ConvertToMp3Audio(outFile!, TargetFile!,
+                                var res = mediaProcessor.ConvertToMp3Audio(outFile!, staging,
                                     this.cancelFlag, out totalBytes);
                                 if (this.cancelFlag.IsCancellationRequested) return;
                                 if (res != MediaProcessingResult.Success)
@@ -407,14 +404,6 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                                         ErrorCode.FFmpegError);
                                 }
 
-                                if (Config.Instance.FetchServerTimeStamp)
-                                {
-                                    try
-                                    {
-                                        File.SetLastWriteTime(TargetFile, state.LastModified);
-                                    }
-                                    catch { }
-                                }
                                 this.totalSize = totalBytes;
                             }
                             else
@@ -431,6 +420,12 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                     }
 
                     if (this.cancelFlag.IsCancellationRequested) return;
+
+                    outfs.Flush();
+                    outfs.Dispose();
+                    OutputFileStaging.Commit(staging, this.TargetFile!);
+                    assemblyOutput = null;
+                    reservedOutput = null;
 
                     if (this.totalSize < 1)
                     {
@@ -452,6 +447,7 @@ namespace ADM.Core.Downloader.Progressive.SingleHttp
                 catch (Exception ex)
                 {
                     Log.Debug(ex, "Error in AssemblePieces");
+                    DiscardAssemblyOutput();
                     throw new AssembleFailedException(ex is DownloadException de ? de.ErrorCode : ErrorCode.Generic);
                 }
             }

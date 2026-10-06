@@ -43,7 +43,7 @@ namespace ADM.Core.Telemetry
         {
             var entry = GetInProgress(downloadId, out var failure);
             if (entry == null) return failure;
-            core.StopDownloads(new[] { entry.Id }, false);
+            core.PauseDownloads(new[] { entry.Id }, false);
             return DownloadDashboardCommandResult.Accepted;
         }
 

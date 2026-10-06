@@ -84,5 +84,10 @@ namespace ADM.Core.Clients.Http
             var contentRange = Response!.Headers.GetValues("Content-Range")?.First();
             return WebRequestExtensions.TryParseContentRange(contentRange, out long start, out _, out _) ? start : -1;
         }
+
+        public string? GetHeader(string name)
+        {
+            return Response!.Headers.Get(name);
+        }
     }
 }

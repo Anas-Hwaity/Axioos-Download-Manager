@@ -110,6 +110,12 @@ namespace ADM.Core.UI
             return setting == SpeedLimiter.FollowGlobal ? (int?)null : setting;
         }
 
+        internal static bool KeepsSuppliedName(Message? message, string? url)
+        {
+            if (message == null || !message.HasSuppliedFileName) return false;
+            return string.Equals(message.Url, url, StringComparison.Ordinal);
+        }
+
         private static Dictionary<string, List<string>>? WithUserAgent(Dictionary<string, List<string>>? headers, string fallbackUserAgent)
         {
             if (headers == null) return null;
@@ -157,7 +163,7 @@ namespace ADM.Core.UI
                     ContentLength = contentLength
                 },
                 FileHelper.SanitizeFileName(window.SelectedFileName),
-                window.SelectedFileName != fileName ? FileNameFetchMode.None : FileNameFetchMode.FileNameAndExtension,
+                window.SelectedFileName != fileName || KeepsSuppliedName(message, window.Url) ? FileNameFetchMode.None : FileNameFetchMode.FileNameAndExtension,
                 selectedFolder,
                 startImmediately,
                 window.Authentication,

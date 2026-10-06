@@ -176,7 +176,7 @@ namespace ADM.Core
 
         public void StopSelectedDownloads()
         {
-            context.CoreService.StopDownloads(context.MainWindow.SelectedInProgressRows.Select(x => x.DownloadEntry.Id), true);
+            context.CoreService.PauseDownloads(context.MainWindow.SelectedInProgressRows.Select(x => x.DownloadEntry.Id), true);
         }
 
         public void ResumeDownloads()

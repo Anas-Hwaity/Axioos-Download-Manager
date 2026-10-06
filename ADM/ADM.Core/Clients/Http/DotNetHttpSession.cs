@@ -101,6 +101,15 @@ namespace ADM.Core.Clients.Http
         {
             return Response?.Content?.Headers?.ContentRange?.From ?? -1;
         }
+
+        public string? GetHeader(string name)
+        {
+            var response = Response;
+            if (response == null) return null;
+            if (response.Headers.TryGetValues(name, out var values) && values != null) return values.FirstOrDefault();
+            if (response.Content != null && response.Content.Headers.TryGetValues(name, out var contentValues) && contentValues != null) return contentValues.FirstOrDefault();
+            return null;
+        }
     }
 }
 #endif

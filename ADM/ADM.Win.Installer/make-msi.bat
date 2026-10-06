@@ -1,6 +1,6 @@
 @echo off
 setlocal
-if not defined BUILD_VER set "BUILD_VER=1.0.3"
+if not defined BUILD_VER set "BUILD_VER=1.0.4"
 if not defined PRODUCT_UPGRADE_CODE set "PRODUCT_UPGRADE_CODE=741CBBE2-3911-4192-A051-AFF85038EFD7"
 
 DEL /s /q *.wixobj 2>NUL

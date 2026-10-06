@@ -590,7 +590,7 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <ProgressBar Width="{Binding Path=Width, ElementName=p1}" 
-                                                     Value="{Binding Progress}" Height="5"
+                                                     Value="{Binding Progress, Mode=OneWay}" Height="5"
                                                      Maximum="100"   />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>

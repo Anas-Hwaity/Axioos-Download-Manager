@@ -41,6 +41,8 @@ namespace ADM.Core
 
         public void StopDownloads(IEnumerable<string> list, bool closeProgressWindow = false);
 
+        public void PauseDownloads(IEnumerable<string> list, bool closeProgressWindow = false);
+
         public bool CancelDownload(string id, DownloadCancellationPolicy policy = DownloadCancellationPolicy.RetainPartial);
 
         public void ResumeDownload(Dictionary<string, DownloadItemBase> list, bool nonInteractive = false);
